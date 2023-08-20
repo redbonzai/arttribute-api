@@ -41,3 +41,18 @@ export class CreateCollection {
   @Type(() => License)
   license: License[];
 }
+
+// Example JSON for create collection
+// {
+//     "title": "test",
+//     "description": "test description",
+//     "tags": ["ai", "ml", "iot"],
+//     "owner": {
+//       "id": "47",
+//       "name": "Ifatos"
+//     },
+//     "license": [
+//       {"id": "1", "name": "A-NC"},
+//       {"id": "2", "name": "A-ND"}
+//     ]
+//   }
