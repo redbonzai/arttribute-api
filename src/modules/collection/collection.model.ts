@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// temporary classes for user and license
+// temporary classes for user, license and Item
 class User {
   @IsString()
   @IsNotEmpty()
@@ -13,7 +13,22 @@ class User {
 }
 
 class License {
+  @IsString()
+  @IsNotEmpty()
   id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
+
+class Item {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty()
   name: string;
 }
 
@@ -40,6 +55,11 @@ export class CreateCollection {
   @ValidateNested({ each: true })
   @Type(() => License)
   license: License[];
+}
+
+export class CollectionResponse extends CreateCollection {
+  id: string;
+  items: Item[];
 }
 
 // Example JSON for create collection

@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from 'src/shared/generateUniqueId';
 import { db } from 'src/shared/polybase/initPolybase';
-import { CreateCollection } from './collection.model';
+import { CreateCollection, CollectionResponse } from './collection.model';
 
 @Injectable()
 export class CollectionService {
@@ -27,6 +27,32 @@ export class CollectionService {
         db.collection('License').record(license.id),
       ),
     ]);
+    return collection;
+  }
+
+  async getAllCollections(): Promise<CollectionResponse[]> {
+    const { data: collections } = await this.collection.get();
+
+    if (!collections) throw new NotFoundException('No collections found');
+    return collections.map((collection) => collection.data);
+  }
+
+  //   async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
+  //     const { data: collections } = await this.collection
+  //       .where('owner', '==', db.collection('User').record(userId).id)
+  //       .get();
+
+  //     if (!collections)
+  //       throw new NotFoundException('No collections found for this user');
+  //     return collections.map((collection) => collection.data);
+  //   }
+
+  async getCollection(collectionId: string): Promise<CollectionResponse> {
+    const { data: collection } = await this.collection
+      .record(collectionId)
+      .get();
+
+    if (!collection) throw new NotFoundException('Collection not found');
     return collection;
   }
 }
