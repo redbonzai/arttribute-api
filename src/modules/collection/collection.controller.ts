@@ -16,10 +16,10 @@ export class CollectionController {
     return await this.collectionService.getAllCollections();
   }
 
-  //   @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
-  //   async getCollectionsForUser(@Param('id') userId: string) {
-  //     return await this.collectionService.getCollectionsForUser(userId);
-  //   }
+  @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
+  async getCollectionsForUser(@Param('id') userId: string) {
+    return await this.collectionService.getCollectionsForUser(userId);
+  }
 
   @Get(':id')
   async getCollection(@Param('id') collectionId: string) {

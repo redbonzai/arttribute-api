@@ -37,15 +37,15 @@ export class CollectionService {
     return collections.map((collection) => collection.data);
   }
 
-  //   async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
-  //     const { data: collections } = await this.collection
-  //       .where('owner', '==', db.collection('User').record(userId).id)
-  //       .get();
+  async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
+    const { data: collections } = await this.collection
+      .where('owner', '==', db.collection('User').record(userId))
+      .get();
 
-  //     if (!collections)
-  //       throw new NotFoundException('No collections found for this user');
-  //     return collections.map((collection) => collection.data);
-  //   }
+    if (!collections || collections.length === 0)
+      throw new NotFoundException('No collections found for this user');
+    return collections.map((collection) => collection.data);
+  }
 
   async getCollection(collectionId: string): Promise<CollectionResponse> {
     const { data: collection } = await this.collection
