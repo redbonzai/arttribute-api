@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch } from '@nestjs/common';
 import { CollectionService } from './collection.service';
 import { CreateCollection } from './collection.model';
 
@@ -24,5 +24,16 @@ export class CollectionController {
   @Get(':id')
   async getCollection(@Param('id') collectionId: string) {
     return await this.collectionService.getCollection(collectionId);
+  }
+
+  @Patch(':id')
+  async addItemToCollection(
+    @Param('id') collectionId: string,
+    @Body('itemId') itemId: string,
+  ) {
+    return await this.collectionService.addItemToCollection(
+      collectionId,
+      itemId,
+    );
   }
 }

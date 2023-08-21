@@ -22,7 +22,7 @@ class License {
   name: string;
 }
 
-class Item {
+export class Item {
   @IsString()
   @IsNotEmpty()
   id: string;

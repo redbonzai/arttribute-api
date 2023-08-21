@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from 'src/shared/generateUniqueId';
-import { db } from 'src/shared/polybase/initPolybase';
+import { db, eddieDb } from 'src/shared/polybase/initPolybase';
 import { CreateCollection, CollectionResponse } from './collection.model';
 
 @Injectable()
@@ -54,5 +58,22 @@ export class CollectionService {
 
     if (!collection) throw new NotFoundException('Collection not found');
     return collection;
+  }
+
+  async addItemToCollection(collectionId: string, itemId: string) {
+    const collection = await this.getCollection(collectionId);
+
+    // TODO: integrate with actual Item module
+    const item = await eddieDb.collection('Item').record(itemId).get();
+    if (!item) throw new NotFoundException('Item not found');
+
+    if (collection.items.find((i) => i.id == item.id))
+      throw new ConflictException('Item already in collection');
+
+    const { data: items } = await this.collection
+      .record(collectionId)
+      .call('addItemToCollection', [item]);
+
+    return items;
   }
 }
