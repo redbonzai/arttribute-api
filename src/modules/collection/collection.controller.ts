@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Param, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { CollectionService } from './collection.service';
 import { CreateCollection } from './collection.model';
 
@@ -26,12 +34,24 @@ export class CollectionController {
     return await this.collectionService.getCollection(collectionId);
   }
 
-  @Patch(':id')
+  // TODO: check on the API structure for adding and removing items from a collection
+  @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
     @Body('itemId') itemId: string,
   ) {
     return await this.collectionService.addItemToCollection(
+      collectionId,
+      itemId,
+    );
+  }
+
+  @Delete(':id/items/:itemId')
+  async removeItemFromCollection(
+    @Param('id') collectionId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return await this.collectionService.removeItemFromCollection(
       collectionId,
       itemId,
     );

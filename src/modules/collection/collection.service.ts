@@ -70,10 +70,25 @@ export class CollectionService {
     if (collection.items.find((i) => i.id == item.id))
       throw new ConflictException('Item already in collection');
 
-    const { data: items } = await this.collection
+    const { data: collections } = await this.collection
       .record(collectionId)
       .call('addItemToCollection', [item]);
 
-    return items;
+    return collections;
+  }
+
+  async removeItemFromCollection(collectionId: string, itemId: string) {
+    const collection = await this.getCollection(collectionId);
+
+    if (!collection.items.find((i) => i.id == itemId))
+      throw new NotFoundException('Item not found');
+
+    const items: any = collection.items.filter((i) => i.id != itemId);
+
+    const { data: collections } = await this.collection
+      .record(collectionId)
+      .call('removeItemFromCollection', [items]);
+
+    return collections;
   }
 }
