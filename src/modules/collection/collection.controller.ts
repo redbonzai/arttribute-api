@@ -67,4 +67,9 @@ export class CollectionController {
       itemId,
     );
   }
+
+  @Delete(':id')
+  async deleteCollection(@Param('id') collectionId: string) {
+    return await this.collectionService.deleteCollection(collectionId);
+  }
 }

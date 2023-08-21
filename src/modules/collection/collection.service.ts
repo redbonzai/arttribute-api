@@ -102,4 +102,10 @@ export class CollectionService {
 
     return collections;
   }
+
+  async deleteCollection(collectionId: string) {
+    await this.getCollection(collectionId);
+
+    await this.collection.record(collectionId).call('deleteCollection');
+  }
 }
