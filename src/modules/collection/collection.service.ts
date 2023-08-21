@@ -25,6 +25,7 @@ export class CollectionService {
       id,
       createCollectionDto.title,
       createCollectionDto.description,
+      createCollectionDto.isPublic,
       createCollectionDto.tags,
       db.collection('User').record(createCollectionDto.owner.id),
       createCollectionDto.license.map((license) =>
@@ -57,6 +58,16 @@ export class CollectionService {
       .get();
 
     if (!collection) throw new NotFoundException('Collection not found');
+    return collection;
+  }
+
+  async changeVisibility(collectionId: string, isPublic: boolean) {
+    await this.getCollection(collectionId);
+
+    const { data: collection } = await this.collection
+      .record(collectionId)
+      .call('changeVisibility', [isPublic]);
+
     return collection;
   }
 

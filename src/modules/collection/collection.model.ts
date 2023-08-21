@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // temporary classes for user, license and Item
@@ -40,6 +46,10 @@ export class CreateCollection {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  isPublic: boolean;
 
   @IsArray()
   @IsNotEmpty()

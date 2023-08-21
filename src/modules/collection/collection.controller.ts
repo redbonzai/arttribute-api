@@ -34,6 +34,17 @@ export class CollectionController {
     return await this.collectionService.getCollection(collectionId);
   }
 
+  @Patch(':id')
+  async changeVisibility(
+    @Param('id') collectionId: string,
+    @Body('isPublic') isPublic: boolean,
+  ) {
+    return await this.collectionService.changeVisibility(
+      collectionId,
+      isPublic,
+    );
+  }
+
   // TODO: check on the API structure for adding and removing items from a collection
   @Patch(':id/items')
   async addItemToCollection(
