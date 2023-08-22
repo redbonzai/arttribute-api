@@ -74,6 +74,10 @@ export class CreatePayment {
   type: string;
 
   @IsNotEmpty()
+  @IsString()
+  source: string;
+
+  @IsNotEmpty()
   @ValidateNested()
   @Type(() => Network)
   network: Network;
@@ -97,7 +101,8 @@ export class CreatePayment {
 //   },
 //   "amount": 10,
 //   "currency": "cUSD",
-//   "type": "donation/royalty"
+//   "type": "donation/royalty",
+//   "source": "vokali.com-123e52yhu9898",
 //   "network": {
 //     "id": "1",
 //     "name": "Celo",

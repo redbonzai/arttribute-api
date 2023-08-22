@@ -26,6 +26,7 @@ export class PaymentService {
       paymentDto.amount,
       paymentDto.currency,
       paymentDto.type,
+      paymentDto.source,
       db.collection('Network').record(paymentDto.network.id),
       createdAt,
     ]);
@@ -45,6 +46,15 @@ export class PaymentService {
   async getUserPaymentsSent(userId: string) {
     const payments = await this.collection
       .where('sender', '==', db.collection('User').record(userId))
+      .sort('created', 'desc')
+      .get();
+    return payments;
+  }
+
+  //get payments by source
+  async getPaymentsBySource(source: string) {
+    const payments = await this.collection
+      .where('source', '==', source)
       .sort('created', 'desc')
       .get();
     return payments;
