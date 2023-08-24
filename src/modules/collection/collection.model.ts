@@ -56,10 +56,9 @@ export class CreateCollection {
   @IsString({ each: true })
   tags: string[];
 
+  @IsString()
   @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => User)
-  owner: User;
+  owner: string | User;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -70,6 +69,7 @@ export class CreateCollection {
 export class CollectionResponse extends CreateCollection {
   id: string;
   items: Item[];
+  owner: User;
 }
 
 // Example JSON for create collection

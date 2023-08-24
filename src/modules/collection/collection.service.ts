@@ -27,7 +27,7 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      db.collection('User').record(createCollectionDto.owner.id),
+      db.collection('User').record(createCollectionDto.owner as string),
       createCollectionDto.license.map((license) =>
         db.collection('License').record(license.id),
       ),
