@@ -8,7 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CollectionService } from './collection.service';
-import { CreateCollection } from './collection.model';
+import { CreateCollection } from './collection.dto';
 
 @Controller('collections')
 export class CollectionController {

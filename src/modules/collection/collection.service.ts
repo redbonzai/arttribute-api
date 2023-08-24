@@ -6,7 +6,7 @@ import {
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from 'src/shared/generateUniqueId';
 import { db, eddieDb } from 'src/shared/polybase/initPolybase';
-import { CreateCollection, CollectionResponse } from './collection.model';
+import { CreateCollection, CollectionResponse } from './collection.dto';
 
 @Injectable()
 export class CollectionService {
