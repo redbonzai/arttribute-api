@@ -28,6 +28,8 @@ export class CollectionService {
       createCollectionDto.isPublic,
       createCollectionDto.tags,
       db.collection('User').record(createCollectionDto.owner as string),
+      new Date().toISOString(),
+      new Date().toISOString(),
       createCollectionDto.license.map((license) =>
         db.collection('License').record(license.id),
       ),

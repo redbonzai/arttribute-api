@@ -70,6 +70,8 @@ export class CollectionResponse extends CreateCollection {
   id: string;
   items: Item[];
   owner: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Example JSON for create collection
