@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CollectionModule } from './modules/collection/collection.module';
+import { CertificateModule } from './modules/certificate/certificate.module';
+import { PolybaseModule } from './shared/polybase';
 
 @Module({
-  imports: [CollectionModule],
+  imports: [CertificateModule, PolybaseModule],
   controllers: [AppController],
   providers: [AppService],
 })
