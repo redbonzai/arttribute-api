@@ -1,5 +1,12 @@
 import { Polybase } from '@polybase/client';
+import { config } from 'dotenv';
 
-const db = new Polybase({
-  defaultNamespace: 'your-namespace',
+config();
+
+export const db = new Polybase({
+  defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/khalifa`,
+});
+
+export const eddieDb = new Polybase({
+  defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/eddie`,
 });
