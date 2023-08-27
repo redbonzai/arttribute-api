@@ -8,6 +8,4 @@ export class CreateItemDto {
   owner: string;
   source: string;
   license: string[];
-  created: string;
-  updated: string;
 }

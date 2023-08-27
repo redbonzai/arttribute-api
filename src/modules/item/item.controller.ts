@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Put,
   Patch,
   Param,
   Delete,
@@ -10,12 +11,14 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ItemService } from './item.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { UpdateItemDto } from './dto/update-item.dto';
 
 @Controller('items')
 export class ItemController {
@@ -28,7 +31,7 @@ export class ItemController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.itemService.findOne();
+    return this.itemService.findOne(id);
   }
 
   @Post()
@@ -60,13 +63,15 @@ export class ItemController {
     return this.itemService.create(createItem, file.destination);
   }
 
-  @Patch('id')
-  update(@Param('id') id: string, @Body() updateItem: CreateItemDto) {
-    return this.itemService.update();
+  @Patch(':id')
+  @HttpCode(204)
+  update(@Param('id') id: string, @Body() updateItem: UpdateItemDto) {
+    console.log(updateItem);
+    return this.itemService.update(id, updateItem);
   }
 
-  @Delete('id')
+  @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.itemService.remove();
+    return this.itemService.remove(id);
   }
 }
