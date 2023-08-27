@@ -15,12 +15,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ItemService } from './item.service';
-import { CreateItemDto } from './dto/create-item.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { UpdateItemDto } from './dto/update-item.dto';
+import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
 
-@Controller('items')
+@Controller({ version: '1', path: 'items' })
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
@@ -40,8 +40,7 @@ export class ItemController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
-          //replace with UUID
-          const uniqueName = Date.now();
+          const uniqueName = generateUniqueId();
           const extension = extname(file.originalname);
           const filename = `${uniqueName}${extension}`;
           callback(null, filename);
@@ -60,13 +59,12 @@ export class ItemController {
     @Body() createItem: CreateItemDto,
   ) {
     const filePath = file.destination + '/' + file.originalname;
-    return this.itemService.create(createItem, file.destination);
+    return this.itemService.create(createItem, file);
   }
 
   @Patch(':id')
   @HttpCode(204)
   update(@Param('id') id: string, @Body() updateItem: UpdateItemDto) {
-    console.log(updateItem);
     return this.itemService.update(id, updateItem);
   }
 

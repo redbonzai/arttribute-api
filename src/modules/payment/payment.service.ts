@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePayment } from './payment.dto';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from 'src/shared/generateUniqueId';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { db } from 'src/shared/polybase/initPolybase';
 
 @Injectable()

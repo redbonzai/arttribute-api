@@ -6,7 +6,7 @@ export class PolybaseService {
   private db: Polybase;
   constructor() {
     this.db = new Polybase({
-      defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/fadhili`,
+      defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/${process.env.POLYBASE_DEV_DB}`,
     });
   }
 

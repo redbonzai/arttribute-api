@@ -1,52 +1,63 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { LicenseModel } from './models/license.model';
 import db from '../../shared/polybase/initPolybase';
-import { Polybase } from '@polybase/client';
+import { Polybase, Collection } from '@polybase/client';
+import { LicenseModel } from './license.dto';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { PolybaseService } from '~/shared/polybase';
 
 @Injectable()
 export class LicenseService {
   private readonly db: Polybase;
-  constructor() {
-    this.db = db;
+  private readonly licenseCollection: Collection<any>;
+
+  constructor(private polybaseService: PolybaseService) {
+    this.db = polybaseService.client;
+    this.licenseCollection = this.db.collection('License');
   }
 
-  findAll() {
-    return `This action returns all license`;
+  public async findAll() {
+    const { data: licenses } = await this.licenseCollection.get();
+    return licenses.map((license) => license.data);
   }
 
-  findOne() {
-    return `This action returns one license`;
-  }
-
-  async create(createLicense: LicenseModel) {
-    const collection = this.db.collection('License');
-    // Check if code exists in the collection
-    const { data, cursor } = await collection
-      .where('code', '==', createLicense.code)
-      .get();
-
-    if (data.length !== 0) {
-      throw new HttpException(
-        'license code already exists - value must be unique',
-        HttpStatus.CONFLICT,
-      );
+  public async findOne(id: string) {
+    const { data: item } = await this.licenseCollection.record(id).get();
+    if (item) {
+      return item;
     } else {
-      const createdLicense = await collection.create([
-        createLicense.id,
-        createLicense.code,
-        createLicense.name,
-        createLicense.description,
-        createLicense.symbol,
-      ]);
-      return createdLicense;
+      throw new HttpException('record not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  public async create(createLicense: LicenseModel) {
+    const collection = this.db.collection('License');
+
+    const createdLicense = await collection.create([
+      createLicense.id,
+      createLicense.name,
+      createLicense.description,
+      createLicense.symbol,
+    ]);
+    return createdLicense;
   }
 
   update() {
     return `This action updates an license`;
   }
 
-  remove() {
-    return `This action removes an license`;
+  public async remove(id: string) {
+    try {
+      await this.licenseCollection.record(id).call('del');
+    } catch (error) {
+      switch (error.code) {
+        case 'not-found':
+          throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+        default:
+          throw new HttpException(
+            'record could not be deleted',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+      }
+    }
   }
 }

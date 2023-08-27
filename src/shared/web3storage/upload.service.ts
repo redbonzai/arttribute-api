@@ -12,11 +12,7 @@ export class UploadService {
   async upload(file) {
     try {
       // Upload the file to Web3Storage
-      console.log(file);
-      //   return;
       const cid: CIDString = await this.web3Storage.put(file);
-
-      console.log(`Uploaded to Web3Storage: ${cid}`);
       return cid;
     } catch (error) {
       console.error('Error uploading to Web3Storage:', error);

@@ -8,9 +8,9 @@ import {
   Delete,
 } from '@nestjs/common';
 import { LicenseService } from './license.service';
-import { LicenseModel } from './models/license.model';
+import { LicenseModel } from './license.dto';
 
-@Controller('licences')
+@Controller({ version: '1', path: 'licenses' })
 export class LicenseController {
   constructor(private readonly licenseService: LicenseService) {}
 
@@ -21,7 +21,7 @@ export class LicenseController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.licenseService.findOne();
+    return this.licenseService.findOne(id);
   }
 
   @Post()
@@ -29,13 +29,13 @@ export class LicenseController {
     return this.licenseService.create(createLicense);
   }
 
-  @Patch('id')
+  @Patch(':id')
   update(@Param('id') id: string, @Body() updateLicense: LicenseModel) {
     return this.licenseService.update();
   }
 
-  @Delete('id')
+  @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.licenseService.remove();
+    return this.licenseService.remove(id);
   }
 }
