@@ -9,7 +9,7 @@ export class UserService {
   private readonly userCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.client;
+    this.db = polybaseService.app('bashy');
     this.userCollection = this.db.collection('User');
   }
   public async create(user) {

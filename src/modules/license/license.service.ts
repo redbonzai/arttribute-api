@@ -1,9 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import db from '../../shared/polybase/initPolybase';
-import { Polybase, Collection } from '@polybase/client';
-import { LicenseModel } from './license.dto';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Collection, Polybase } from '@polybase/client';
 import { PolybaseService } from '~/shared/polybase';
+import { LicenseModel } from './license.dto';
 
 @Injectable()
 export class LicenseService {
@@ -11,7 +9,7 @@ export class LicenseService {
   private readonly licenseCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.client;
+    this.db = polybaseService.app('bashy');
     this.licenseCollection = this.db.collection('License');
   }
 

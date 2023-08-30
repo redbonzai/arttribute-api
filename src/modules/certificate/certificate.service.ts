@@ -8,8 +8,9 @@ export class CertificateService {
   private certificateCollection;
 
   constructor(private polybaseService: PolybaseService) {
-    this.certificateCollection =
-      polybaseService.client.collection('Certificate');
+    this.certificateCollection = polybaseService
+      .app('fadhili')
+      .collection('Certificate');
   }
 
   public async createCertificate(props: { certificate: CreateCertificate }) {

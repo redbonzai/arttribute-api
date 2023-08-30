@@ -1,16 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { Polybase } from '@polybase/client';
 
+const apps = [
+  'arttribute-test',
+  'bashy',
+  'eddie',
+  'fadhili',
+  'khalifa',
+] as const;
+type App = (typeof apps)[number];
+
 @Injectable()
 export class PolybaseService {
-  private db: Polybase;
-  constructor() {
-    this.db = new Polybase({
-      defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/${process.env.POLYBASE_DEV_DB}`,
-    });
-  }
+  private apps: Record<string, Polybase> = {};
+  constructor() {}
 
-  public get client() {
-    return this.db;
+  //   public get client() {
+  //     return this.db;
+  //   }
+
+  public app(name: App) {
+    return (this.apps[name] ||= new Polybase({
+      defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/${name}`,
+    }));
   }
 }
