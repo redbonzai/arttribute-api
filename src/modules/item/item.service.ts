@@ -15,7 +15,7 @@ export class ItemService {
     private polybaseService: PolybaseService,
     private uploadService: UploadService,
   ) {
-    this.db = polybaseService.client;
+    this.db = polybaseService.app('eddie');
     this.itemCollection = this.db.collection('Item');
   }
 

@@ -5,16 +5,18 @@ import {
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { db, eddieDb } from 'src/shared/polybase/initPolybase';
 import { CreateCollection, CollectionResponse } from './collection.dto';
+import { PolybaseService } from '~/shared/polybase';
 
 @Injectable()
 export class CollectionService {
   db: Polybase;
+  eddieDb: Polybase;
   collection: Collection<any>;
 
-  constructor() {
-    this.db = db;
+  constructor(private polybaseService: PolybaseService) {
+    this.db = polybaseService.app('khalifa');
+    this.eddieDb = polybaseService.app('eddie');
     this.collection = this.db.collection('Collection');
   }
 
@@ -27,11 +29,11 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      db.collection('User').record(createCollectionDto.owner as string),
+      this.db.collection('User').record(createCollectionDto.owner as string),
       new Date().toISOString(),
       new Date().toISOString(),
       createCollectionDto.license.map((license) =>
-        db.collection('License').record(license.id),
+        this.db.collection('License').record(license.id),
       ),
     ]);
     return collection;
@@ -46,7 +48,7 @@ export class CollectionService {
 
   async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
     const { data: collections } = await this.collection
-      .where('owner', '==', db.collection('User').record(userId))
+      .where('owner', '==', this.db.collection('User').record(userId))
       .get();
 
     if (!collections || collections.length === 0)
@@ -77,7 +79,7 @@ export class CollectionService {
     const collection = await this.getCollection(collectionId);
 
     // TODO: integrate with actual Item module
-    const item = await eddieDb.collection('Item').record(itemId).get();
+    const item = await this.eddieDb.collection('Item').record(itemId).get();
     if (!item) throw new NotFoundException('Item not found');
 
     if (collection.items.find((i) => i.id == item.id))
