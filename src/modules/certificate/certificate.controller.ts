@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtPayload } from 'jsonwebtoken';
 import { JwtAuthGuard, User } from '../auth';
 import { CreateCertificate } from './certificate.dto';
@@ -26,9 +18,8 @@ export class CertificateController {
   public async getCertificate(
     @Param('certificateId') id: string,
     @User() user: JwtPayload,
-    @Request() req,
   ) {
-    console.log(req.user);
+    console.log(user);
     return this.certificateService.getCertificate({ id });
   }
 }
