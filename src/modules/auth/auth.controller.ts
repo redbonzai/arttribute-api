@@ -25,4 +25,3 @@ export class AuthController {
     return { token: token, publicKey: publicKey };
   }
 }
-
