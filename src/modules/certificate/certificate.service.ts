@@ -79,7 +79,6 @@ export class CertificateService {
     options?: RequestOptions,
   ) {
     const { certificateId } = props;
-    console.log({ certificateId });
     const certificateRecord = await this.certificateCollection
       .record(certificateId)
       .get();

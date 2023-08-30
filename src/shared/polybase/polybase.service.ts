@@ -15,10 +15,6 @@ export class PolybaseService {
   private apps: Record<string, Polybase> = {};
   constructor() {}
 
-  //   public get client() {
-  //     return this.db;
-  //   }
-
   public app(name: App) {
     return (this.apps[name] ||= new Polybase({
       defaultNamespace: `${process.env.POLYBASE_NAMESPACE}/${name}`,
