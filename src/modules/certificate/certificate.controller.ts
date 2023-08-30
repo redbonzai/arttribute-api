@@ -4,14 +4,13 @@ import {
   Get,
   Param,
   Post,
-  UseGuards,
   Request,
+  UseGuards,
 } from '@nestjs/common';
-import { CertificateService } from './certificate.service';
-import { CreateCertificate } from './certificate.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { User } from '../auth';
 import { JwtPayload } from 'jsonwebtoken';
+import { JwtAuthGuard, User } from '../auth';
+import { CreateCertificate } from './certificate.dto';
+import { CertificateService } from './certificate.service';
 
 @Controller({ version: '1', path: 'certificate' })
 export class CertificateController {
@@ -22,7 +21,7 @@ export class CertificateController {
     return this.certificateService.createCertificate({ certificate: body });
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
     @Param('certificateId') id: string,
