@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { CreatePayment } from './payment.dto';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { db } from 'src/shared/polybase/initPolybase';
+import { PolybaseService } from '~/shared/polybase';
 
 @Injectable()
 export class PaymentService {
   db: Polybase;
   collection: Collection<any>;
 
-  constructor() {
-    this.db = db;
+  constructor(private polybaseService: PolybaseService) {
+    this.db = polybaseService.app('bashy');
     this.collection = this.db.collection('Payment');
   }
 
@@ -21,13 +21,13 @@ export class PaymentService {
     const payment = await this.collection.create([
       id,
       paymentDto.payedFor,
-      db.collection('User').record(paymentDto.sender.id),
-      db.collection('User').record(paymentDto.receiver.id),
+      this.db.collection('User').record(paymentDto.sender.id),
+      this.db.collection('User').record(paymentDto.receiver.id),
       paymentDto.amount,
       paymentDto.currency,
       paymentDto.type,
       paymentDto.source,
-      db.collection('Network').record(paymentDto.network.id),
+      this.db.collection('Network').record(paymentDto.network.id),
       createdAt,
     ]);
     return payment;
@@ -36,7 +36,7 @@ export class PaymentService {
   //get user payments received
   async getUserPaymentsReceived(userId: string) {
     const payments = await this.collection
-      .where('receiver', '==', db.collection('User').record(userId))
+      .where('receiver', '==', this.db.collection('User').record(userId))
       .sort('created', 'desc')
       .get();
     return payments;
@@ -45,7 +45,7 @@ export class PaymentService {
   //get user payments sent
   async getUserPaymentsSent(userId: string) {
     const payments = await this.collection
-      .where('sender', '==', db.collection('User').record(userId))
+      .where('sender', '==', this.db.collection('User').record(userId))
       .sort('created', 'desc')
       .get();
     return payments;

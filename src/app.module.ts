@@ -8,12 +8,14 @@ import { ItemModule } from './modules/item/item.module';
 import { LicenseModule } from './modules/license/license.module';
 import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
+    PolybaseModule,
     CertificateModule,
     PaymentModule,
-    PolybaseModule,
     ItemModule,
     LicenseModule,
     UploadModule,
