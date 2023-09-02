@@ -5,6 +5,7 @@ import { UploadService } from 'src/shared/web3storage/upload.service';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class ItemService {
@@ -19,17 +20,17 @@ export class ItemService {
     this.itemCollection = this.db.collection('Item');
   }
 
-  async recordExists(id: string) {
+  public async recordExists(id: string) {
     const item = await this.itemCollection.record(id).get();
     return item.exists();
   }
 
-  async findAll() {
+  public async findAll() {
     const { data: items } = await this.itemCollection.get();
     return items.map((item) => item.data);
   }
 
-  async findOne(id: string) {
+  public async findOne(id: string) {
     const { data: item } = await this.itemCollection.record(id).get();
     if (item) {
       return item;
@@ -38,7 +39,7 @@ export class ItemService {
     }
   }
 
-  async create(createItem: CreateItemDto, file: Express.Multer.File) {
+  public async create(createItem: CreateItemDto, file: Express.Multer.File) {
     const filePath = file.destination + '/' + file.filename;
     const uploadFile = await getFilesFromPath([filePath]);
     const cid: CIDString = await this.uploadService.upload(uploadFile);
@@ -68,7 +69,7 @@ export class ItemService {
     return createdItem;
   }
 
-  async update(id: string, updateItem: UpdateItemDto) {
+  public async update(id: string, updateItem: UpdateItemDto, user: JwtPayload) {
     if (this.recordExists(id)) {
       const current_time = new Date().toISOString();
       const LicenseCollection = this.db.collection('License');
@@ -103,7 +104,7 @@ export class ItemService {
     }
   }
 
-  async remove(id: string) {
+  public async remove(id: string) {
     // await this.itemCollection.record(id).get();
     // return await this.itemCollection.record(id).call('del');
 

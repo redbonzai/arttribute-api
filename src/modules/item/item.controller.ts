@@ -12,6 +12,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ItemService } from './item.service';
@@ -19,6 +20,8 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { JwtAuthGuard, User } from '../auth';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Controller({ version: '1', path: 'items' })
 export class ItemController {
@@ -29,6 +32,7 @@ export class ItemController {
     return this.itemService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
@@ -64,8 +68,12 @@ export class ItemController {
 
   @Patch(':id')
   @HttpCode(204)
-  update(@Param('id') id: string, @Body() updateItem: UpdateItemDto) {
-    return this.itemService.update(id, updateItem);
+  update(
+    @Param('id') id: string,
+    @Body() updateItem: UpdateItemDto,
+    @User() user: JwtPayload,
+  ) {
+    return this.itemService.update(id, updateItem, user);
   }
 
   @Delete(':id')
