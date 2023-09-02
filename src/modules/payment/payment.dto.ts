@@ -8,7 +8,6 @@ import {
 
 import { Type } from 'class-transformer';
 
-// temporary classes for user and network
 class User {
   @IsString()
   @IsNotEmpty()
@@ -112,3 +111,4 @@ export class CreatePayment {
 //   }
 //  "created": "2021-05-05T12:00:00.000Z"
 // }
+

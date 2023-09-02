@@ -43,3 +43,4 @@ export class CertificateController {
     return this.certificateService.getCertificate({ certificateId }, { full });
   }
 }
+

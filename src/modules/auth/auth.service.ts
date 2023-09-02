@@ -1,22 +1,40 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ethers } from 'ethers';
-import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
+import { Polybase, Collection } from '@polybase/client';
+import { PolybaseService } from '~/shared/polybase';
+import { getSignerData } from '~/shared/util/getSignerData';
 
 @Injectable()
 export class AuthService {
-  private readonly JWT_SECRET = 'YOUR_SECRET_FOR_JWT';
+  private readonly db: Polybase;
+  private readonly userCollection: Collection<any>;
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private polybaseService: PolybaseService,
+  ) {
+    this.db = polybaseService.app('bashy');
+    this.userCollection = this.db.collection('User');
+  }
 
   async authenticate(
     address: string,
     message: string,
     signature: string,
-  ): Promise<string> {
+  ): Promise<{ token: string; publicKey: string }> {
     try {
-      const signer = ethers.verifyMessage(message, signature);
-      if (signer.toLowerCase() !== address.toLowerCase()) {
+      const { recoveredAddress, publicKey } = getSignerData(message, signature);
+      if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
         throw new UnauthorizedException('Signature does not match!');
       }
-      return jwt.sign({ address }, this.JWT_SECRET, { expiresIn: '1d' });
+      const existingUser = await this.userCollection
+        .where('address', '==', address)
+        .get();
+      if (!existingUser.data[0].data) {
+        throw new UnauthorizedException('User does not exist!');
+      }
+      const token = this.jwtService.sign({ address, publicKey });
+      return { token, publicKey };
     } catch (error) {
       throw new UnauthorizedException('Authentication failed.');
     }

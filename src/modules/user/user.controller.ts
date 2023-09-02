@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
 
 @Controller('users')
@@ -6,7 +6,13 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() user) {
-    return this.userService.create(user);
+  async createUser(
+    @Body('address') address: string,
+    @Body('message') message: string,
+    @Body('signature') signature: string,
+    @Body('name') name: string,
+  ): Promise<{ message: string; user; token: string }> {
+    return this.userService.createUser(address, message, signature, name);
   }
 }
+

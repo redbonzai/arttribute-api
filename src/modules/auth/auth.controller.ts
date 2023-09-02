@@ -1,6 +1,5 @@
 import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ethPersonalSignRecoverPublicKey } from '@polybase/eth';
 
 @Controller('auth')
 export class AuthController {
@@ -11,18 +10,18 @@ export class AuthController {
     @Body('address') address: string,
     @Body('message') message: string,
     @Body('signature') signature: string,
-  ): Promise<{ token: string; publicKey: string }> {
-    const token = await this.authService.authenticate(
+  ): Promise<{ token: string }> {
+    const verifiedUser = await this.authService.authenticate(
       address,
       message,
       signature,
     );
-    const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
+    const token = verifiedUser.token;
     if (!token) {
       throw new UnauthorizedException('Authentication failed.');
     }
 
-    return { token: token, publicKey: publicKey };
+    return { token: token };
   }
 }
 

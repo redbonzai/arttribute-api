@@ -10,6 +10,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { KeyModule } from './modules/key/key.module';
 
 @Module({
   imports: [
@@ -21,8 +22,10 @@ import { AuthModule } from './modules/auth/auth.module';
     LicenseModule,
     UploadModule,
     UserModule,
+    KeyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+
