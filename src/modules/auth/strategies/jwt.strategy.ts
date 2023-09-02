@@ -5,8 +5,6 @@ import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  private readonly JWT_SECRET = 'YOUR_SECRET_FOR_JWT';
-
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -17,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ]),
       ignoreExpiration: false,
       //   TODO: Turn into env var
-      secretOrKey: 'YOUR_SECRET_FOR_JWT',
+      secretOrKey: `${process.env.JWT_SECRET}`,
     });
   }
 

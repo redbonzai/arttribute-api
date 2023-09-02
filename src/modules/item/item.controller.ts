@@ -23,6 +23,7 @@ import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { JwtAuthGuard, User } from '../auth';
 import { JwtPayload } from 'jsonwebtoken';
 
+@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
@@ -32,12 +33,13 @@ export class ItemController {
     return this.itemService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
   }
 
+  // @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
     FileInterceptor('file', {
@@ -61,9 +63,10 @@ export class ItemController {
     )
     file: Express.Multer.File,
     @Body() createItem: CreateItemDto,
+    @User() user: JwtPayload,
   ) {
     const filePath = file.destination + '/' + file.originalname;
-    return this.itemService.create(createItem, file);
+    return this.itemService.create(createItem, file, user);
   }
 
   @Patch(':id')
@@ -77,7 +80,7 @@ export class ItemController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.itemService.remove(id);
+  remove(@Param('id') id: string, @User() user: JwtPayload) {
+    return this.itemService.remove(id, user);
   }
 }
