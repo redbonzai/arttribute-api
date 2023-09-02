@@ -15,10 +15,13 @@ export class AuthService {
   ): Promise<string> {
     try {
       const signer = ethers.verifyMessage(message, signature);
+      console.log(signer);
       if (signer.toLowerCase() !== address.toLowerCase()) {
         throw new UnauthorizedException('Signature does not match!');
+        // const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
+        // userService.getUser(publicKey)
       }
-      return this.jwtService.sign(JSON.stringify({ sub: address }));
+      return this.jwtService.sign({ sub: address });
       return jwt.sign({ address }, this.JWT_SECRET, { expiresIn: '1d' });
     } catch (error) {
       throw new UnauthorizedException('Authentication failed.');

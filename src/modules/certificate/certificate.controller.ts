@@ -16,6 +16,7 @@ import { CertificateService } from './certificate.service';
 export class CertificateController {
   constructor(private certificateService: CertificateService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
