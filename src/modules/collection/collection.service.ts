@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { CreateCollection, CollectionResponse } from './collection.dto';
+import { CreateCollection, CollectionResponse, Item } from './collection.dto';
 import { PolybaseService } from '~/shared/polybase';
+import { LicenseModel } from '../license/license.dto';
 
 @Injectable()
 export class CollectionService {
@@ -33,7 +34,7 @@ export class CollectionService {
       new Date().toISOString(),
       new Date().toISOString(),
       createCollectionDto.license.map((license) =>
-        this.db.collection('License').record(license.id),
+        this.eddieDb.collection('License').record(license),
       ),
     ]);
     return collection;
@@ -79,15 +80,28 @@ export class CollectionService {
     const collection = await this.getCollection(collectionId);
 
     // TODO: integrate with actual Item module
-    const item = await this.eddieDb.collection('Item').record(itemId).get();
-    if (!item) throw new NotFoundException('Item not found');
+    const record = await this.eddieDb.collection('Item').record(itemId).get();
+    const item = record.data;
+
+    if (!record || !item) throw new NotFoundException('Item not found');
 
     if (collection.items.find((i) => i.id == item.id))
       throw new ConflictException('Item already in collection');
 
+    const newLicenses = [];
+
+    for (const license of item.license) {
+      if (!collection.license.find((l) => l.id == license.id)) {
+        newLicenses.push(license);
+      }
+    }
+
     const { data: collections } = await this.collection
       .record(collectionId)
-      .call('addItemToCollection', [item]);
+      .call('addItemToCollection', [
+        record,
+        newLicenses.length === 0 ? undefined : newLicenses,
+      ]);
 
     return collections;
   }
@@ -98,11 +112,23 @@ export class CollectionService {
     if (!collection.items.find((i) => i.id == itemId))
       throw new NotFoundException('Item not found');
 
-    const items: any = collection.items.filter((i) => i.id != itemId);
+    const items: Item[] = collection.items.filter((i) => i.id != itemId);
+
+    const newLicenses: LicenseModel[] = [];
+    const seen = new Set<string>();
+
+    for (const item of items) {
+      for (const license of item.license) {
+        if (!seen.has(license.id)) {
+          seen.add(license.id);
+          newLicenses.push(license);
+        }
+      }
+    }
 
     const { data: collections } = await this.collection
       .record(collectionId)
-      .call('removeItemFromCollection', [items]);
+      .call('removeItemFromCollection', [items as any, newLicenses]);
 
     return collections;
   }

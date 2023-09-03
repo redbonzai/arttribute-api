@@ -6,11 +6,15 @@ import {
   Param,
   Patch,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { CollectionService } from './collection.service';
 import { CreateCollection } from './collection.dto';
+import { JwtAuthGuard, User } from '../auth';
+import { JwtPayload } from 'jsonwebtoken';
 
-@Controller('collections')
+@UseGuards(JwtAuthGuard)
+@Controller({ version: '1', path: 'collections' })
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
@@ -21,7 +25,7 @@ export class CollectionController {
 
   @Get()
   async getAllCollections() {
-    return await this.collectionService.getAllCollections();
+    return this.collectionService.getAllCollections();
   }
 
   @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
