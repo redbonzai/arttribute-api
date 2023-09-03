@@ -11,6 +11,7 @@ import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { KeyModule } from './modules/key/key.module';
+import { ProjectModule } from './modules/project/project.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { KeyModule } from './modules/key/key.module';
     LicenseModule,
     UploadModule,
     UserModule,
+    ProjectModule,
     KeyModule,
   ],
   controllers: [AppController],

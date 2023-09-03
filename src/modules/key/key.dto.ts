@@ -7,7 +7,7 @@ export class KeyDto {
 
   @IsString()
   @IsNotEmpty()
-  owner: string;
+  project: string;
 
   @IsNotEmpty()
   @IsString()
@@ -16,12 +16,5 @@ export class KeyDto {
   @IsNotEmpty()
   @IsString()
   value: string;
-
-  @IsNotEmpty()
-  @IsString()
-  name: string;
-
-  @IsString()
-  url: string;
 }
 

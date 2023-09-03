@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
-@Controller('auth')
+@Controller({ version: '1', path: 'auth' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -18,7 +18,7 @@ export class AuthController {
     );
     const token = verifiedUser.token;
     if (!token) {
-      throw new UnauthorizedException('Authentication failed.');
+      throw new UnauthorizedException('Authentication failed');
     }
 
     return { token: token };

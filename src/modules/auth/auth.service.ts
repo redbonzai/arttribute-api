@@ -1,6 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  HttpException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Polybase, Collection } from '@polybase/client';
+import { first } from 'lodash';
 import { PolybaseService } from '~/shared/polybase';
 import { getSignerData } from '~/shared/util/getSignerData';
 
@@ -30,13 +35,17 @@ export class AuthService {
       const existingUser = await this.userCollection
         .where('address', '==', address)
         .get();
-      if (!existingUser.data[0].data) {
+      if (!first(existingUser.data)?.data) {
         throw new UnauthorizedException('User does not exist!');
       }
       const token = this.jwtService.sign({ address, publicKey });
       return { token, publicKey };
     } catch (error) {
-      throw new UnauthorizedException('Authentication failed.');
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.log(error);
+      throw new UnauthorizedException('Authentication failed');
     }
   }
 }
