@@ -16,13 +16,13 @@ import { CertificateService } from './certificate.service';
 export class CertificateController {
   constructor(private certificateService: CertificateService) {}
 
-  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
-    // @User() user: JwtPayload,
+    @User() user: JwtPayload,
   ) {
-    const user = { sub: 'test-user' };
+    // By the time it's here, it's already been authorized
     console.log(user);
     return this.certificateService.createCertificate({
       certificate: body,
@@ -35,6 +35,7 @@ export class CertificateController {
     return this.certificateService.getCertificates({}, { full });
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
     @Param('certificateId') certificateId: string,
