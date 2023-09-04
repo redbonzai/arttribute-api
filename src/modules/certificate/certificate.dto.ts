@@ -1,4 +1,20 @@
-import { IsDefined, IsIn, IsString, IsUUID } from 'class-validator';
+import {
+  IsDefined,
+  IsIn,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
+
+class Reference {
+  @IsDefined()
+  @IsIn(['item', 'collection'])
+  type!: 'item' | 'collection';
+
+  @IsDefined()
+  @IsUUID()
+  id!: string;
+}
 
 export class PolybaseCertificate {
   @IsDefined()
@@ -11,18 +27,9 @@ export class PolybaseCertificate {
   @IsString()
   description?: string;
 
-  @IsString({ each: true })
-  reference!: ['item' | 'collection', string];
-}
-
-class Reference {
   @IsDefined()
-  @IsIn(['item', 'collection'])
-  type!: 'item' | 'collection';
-
-  @IsDefined()
-  @IsUUID()
-  id!: string;
+  @ValidateNested()
+  reference!: Reference;
 }
 
 class Certificate {
