@@ -47,12 +47,14 @@ export class CollectionService {
     return collections.map((collection) => collection.data);
   }
 
-  async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
+  public async getCollectionsForUser(
+    userId: string,
+  ): Promise<CollectionResponse[]> {
     const { data: collections } = await this.collection
       .where('owner', '==', this.db.collection('User').record(userId))
       .get();
 
-    if (!collections || collections.length === 0)
+    if (!collections)
       throw new NotFoundException('No collections found for this user');
     return collections.map((collection) => collection.data);
   }
