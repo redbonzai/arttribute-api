@@ -2,6 +2,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -80,9 +81,15 @@ export class AuthService {
       .limit(1)
       .get();
     const apiKey = first(apiKeyRecords);
+    if (!apiKey) {
+      throw new NotFoundException('API Key Not found');
+    }
     const { data: project } = await this.projectCollection
       .record(apiKey.data.project.id)
       .get();
+    if (!project) {
+      throw new NotFoundException('Project Not found');
+    }
     return project;
 
     // Get project form API Key
