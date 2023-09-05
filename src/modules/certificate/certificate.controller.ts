@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtPayload } from 'jsonwebtoken';
-import { APIKeyAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
 import { CreateCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 
@@ -16,12 +16,13 @@ import { CertificateService } from './certificate.service';
 export class CertificateController {
   constructor(private certificateService: CertificateService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
-    // @User() user: JwtPayload,
+    @User() user: JwtPayload,
   ) {
-    const user = { sub: 'test-user' };
+    // By the time it's here, it's already been authorized
     console.log(user);
     return this.certificateService.createCertificate({
       certificate: body,
