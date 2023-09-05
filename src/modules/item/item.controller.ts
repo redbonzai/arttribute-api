@@ -38,6 +38,7 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
