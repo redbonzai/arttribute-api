@@ -44,7 +44,13 @@ export class CertificateController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/:userId/references') // TODO: This route structure?
-  public async discoverUserCertificates(@Param('userId') userId: string) {
-    return this.certificateService.discoverUserCertificates({ userId });
+  public async discoverUserCertificates(
+    @Param('userId') userId: string,
+    @Query('full') full: boolean,
+  ) {
+    return this.certificateService.discoverUserCertificates(
+      { userId },
+      { full },
+    );
   }
 }
