@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Query,
   Patch,
   Param,
   Delete,
@@ -13,6 +13,7 @@ import {
   MaxFileSizeValidator,
   HttpCode,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ItemService } from './item.service';
@@ -29,17 +30,19 @@ export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
   @Get()
-  findAll() {
-    return this.itemService.findAll();
+  findAll(
+    @Req() req,
+    @Query()
+    query: { source?: string; tags?: string },
+  ) {
+    return this.itemService.findAll(query);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
     FileInterceptor('file', {
