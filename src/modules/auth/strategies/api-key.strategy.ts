@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
 import { AuthService } from '../auth.service';
+import { trim } from 'lodash';
 
 @Injectable()
 export class APIKeyStrategy extends PassportStrategy(
@@ -17,7 +18,7 @@ export class APIKeyStrategy extends PassportStrategy(
       },
       true,
       (apiKey: string, verified: Function, req: Request) => {
-        return this.validate(apiKey, verified, req);
+        return this.validate(trim(apiKey), verified, req);
       },
     );
   }
@@ -26,21 +27,19 @@ export class APIKeyStrategy extends PassportStrategy(
 
   async validate(apiKey: string, verified: Function, req: Request) {
     let error = null;
-    let user;
+    let project;
     let info;
 
     try {
-      const project = await this.authService.getProjectForAPIKey(
+      project = await this.authService.getProjectForAPIKey(
         this.authService.hash(apiKey),
       );
       (req as any).project = project || null;
-      // Change when project works
-      user = project || true;
-      console.log(user);
+      console.log(project);
     } catch (err) {
       console.log(err);
       error = new UnauthorizedException();
     }
-    return verified(error, user, info);
+    return verified(error, project, info);
   }
 }

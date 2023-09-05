@@ -80,6 +80,10 @@ export class AuthService {
       .limit(1)
       .get();
     const apiKey = first(apiKeyRecords);
+    const { data: project } = await this.projectCollection
+      .record(apiKey.data.project.id)
+      .get();
+    return project;
 
     // Get project form API Key
 
