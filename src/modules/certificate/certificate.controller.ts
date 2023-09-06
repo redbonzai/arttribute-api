@@ -22,9 +22,7 @@ export class CertificateController {
     @Body() body: CreateCertificate,
     @User() user: JwtPayload,
   ) {
-    // By the time it's here, it's already been authorized
-    console.log(user);
-    return this.certificateService.createCertificate({
+    return await this.certificateService.createCertificate({
       certificate: body,
       user,
     });
@@ -42,6 +40,12 @@ export class CertificateController {
     @Query('full') full: boolean,
   ) {
     return this.certificateService.getCertificate({ certificateId }, { full });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/:userId/references') // TODO: This route structure?
+  public async discoverUserCertificates(@Param('userId') userId: string) {
+    return this.certificateService.discoverUserCertificates({ userId });
   }
 }
 

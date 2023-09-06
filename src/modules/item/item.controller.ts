@@ -38,32 +38,12 @@ export class ItemController {
     return this.itemService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const uniqueName = generateUniqueId();
-          const extension = extname(file.originalname);
-          const filename = `${uniqueName}${extension}`;
-          callback(null, filename);
-        },
-      }),
-    }),
-  )
-  create(
-    //Pipe to limit the file size of uploaded file to 10 MB
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 10000000 })],
-      }),
-    )
-    file: Express.Multer.File,
-    @Body() createItem: CreateItemDto,
-  ) {
-    const filePath = file.destination + '/' + file.originalname;
-    return this.itemService.create(createItem, file);
+  create(@Body() createItem: CreateItemDto, @User() user: JwtPayload) {
+    console.log('user:', user);
+    const userId = user.publicKey;
+    return this.itemService.create(createItem, userId);
   }
 
   @Patch(':id')
@@ -81,3 +61,4 @@ export class ItemController {
     return this.itemService.remove(id);
   }
 }
+

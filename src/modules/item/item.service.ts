@@ -10,6 +10,7 @@ import { JwtPayload } from 'jsonwebtoken';
 @Injectable()
 export class ItemService {
   private readonly db: Polybase;
+  private readonly eddiedb: Polybase;
   private readonly itemCollection: Collection<any>;
 
   constructor(
@@ -17,6 +18,7 @@ export class ItemService {
     private uploadService: UploadService,
   ) {
     this.db = polybaseService.app('bashy');
+    this.eddiedb = polybaseService.app('eddie');
     this.itemCollection = this.db.collection('Item');
   }
 
@@ -39,12 +41,16 @@ export class ItemService {
     }
   }
 
-  public async create(createItem: CreateItemDto, file: Express.Multer.File) {
-    const filePath = file.destination + '/' + file.filename;
-    const uploadFile = await getFilesFromPath([filePath]);
-    const cid: CIDString = await this.uploadService.upload(uploadFile);
-    const LicenseCollection = this.db.collection('License');
-    const url = this.generateURLfromCID(cid, file.filename);
+  public async create(
+    createItem: CreateItemDto,
+
+    userId: string,
+  ) {
+    //const filePath = file.destination + '/' + file.filename;
+    //const uploadFile = await getFilesFromPath([filePath]);
+    //const cid: CIDString = await this.uploadService.upload(uploadFile);
+    const LicenseCollection = this.eddiedb.collection('License');
+    //const url = this.generateURLfromCID(cid, file.filename);
 
     const id = generateUniqueId();
     const current_time = new Date().toISOString();
@@ -52,17 +58,18 @@ export class ItemService {
       id,
       createItem.title,
       createItem.description,
-      url,
+      createItem.url,
       createItem.tags,
       createItem.author,
-      this.db.collection('User').record(createItem.owner),
+      this.db.collection('User').record(userId),
       createItem.source,
-      //TODO: Validate license_IDs
+      createItem.license.join(''),
       createItem.license.map((license_id) =>
         LicenseCollection.record(license_id),
       ),
-      createItem.price,
-      createItem.currency,
+      createItem.price?.amount || 0,
+      createItem.price?.currency || 'none',
+      createItem.needsRequest,
       current_time,
       current_time,
     ]);
@@ -72,17 +79,16 @@ export class ItemService {
   public async update(id: string, updateItem: UpdateItemDto, user: JwtPayload) {
     if (this.recordExists(id)) {
       const current_time = new Date().toISOString();
-      const LicenseCollection = this.db.collection('License');
+      const LicenseCollection = this.eddiedb.collection('License');
       const oldItem = await this.itemCollection.record(id).get();
 
-      const currency = Object.keys(oldItem.data.price)[0];
-      let license;
+      let licenseReference;
       if (updateItem.license) {
-        license = updateItem.license.map((license_id) =>
+        licenseReference = updateItem.license.map((license_id) =>
           LicenseCollection.record(license_id),
         );
       } else {
-        license = oldItem.data.license;
+        licenseReference = oldItem.data.license.reference;
       }
       const updatedItem = await this.itemCollection
         .record(id)
@@ -92,10 +98,11 @@ export class ItemService {
           updateItem.tags || oldItem.data.tags,
           updateItem.author || oldItem.data.author,
           updateItem.source || oldItem.data.source,
-          license,
+          updateItem.license.join('') || oldItem.data.license.name,
+          licenseReference,
+          updateItem.price.amount || oldItem.data.price.priceAmount,
+          updateItem.price.currency || oldItem.data.price.currency,
           current_time,
-          updateItem.price || oldItem.data.price[currency],
-          updateItem.currency || currency,
         ]);
 
       return this.findOne(id);

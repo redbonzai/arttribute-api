@@ -12,6 +12,8 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { KeyModule } from './modules/key/key.module';
 import { ProjectModule } from './modules/project/project.module';
+import { RequestModule } from './modules/request/request.module';
+import { NetworkModule } from './modules/network/network.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { ProjectModule } from './modules/project/project.module';
     UserModule,
     ProjectModule,
     KeyModule,
+    RequestModule,
+    NetworkModule,
   ],
   controllers: [AppController],
   providers: [AppService],
