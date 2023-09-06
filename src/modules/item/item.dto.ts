@@ -40,9 +40,6 @@ export class ItemDto {
 }
 
 export class CreateItemDto extends ItemDto {
-  @IsString()
-  owner: string;
-
   @IsNotEmpty()
   @IsNumberString()
   price: number;

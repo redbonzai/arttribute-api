@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Collection, Polybase } from '@polybase/client';
+import { JwtPayload } from 'jsonwebtoken';
 import { first } from 'lodash';
 import { sha256 } from 'sha.js';
 import { v4 as uuidv4 } from 'uuid';
