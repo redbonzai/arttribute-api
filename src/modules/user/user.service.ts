@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Polybase, Collection } from '@polybase/client';
 import { PolybaseService } from '~/shared/polybase';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { getSignerData } from '~/shared/util/getSignerData';
 
 @Injectable()
 export class UserService {
@@ -9,7 +10,7 @@ export class UserService {
   private readonly userCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('eddie');
+    this.db = polybaseService.app('bashy');
     this.userCollection = this.db.collection('User');
   }
   async createUser(
@@ -27,7 +28,7 @@ export class UserService {
       };
     }
     const createdUser = await this.userCollection.create([
-      generateUniqueId(),
+      publicKey,
       publicKey,
       address,
       name,

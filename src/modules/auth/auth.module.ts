@@ -4,17 +4,17 @@ import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { APIKeyStrategy } from './strategies/api-key.strategy';
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      // TODO: Turn into env var
-      secret: `${process.env.JWT_SECRET}`,
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, APIKeyStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

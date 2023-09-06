@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtPayload } from 'jsonwebtoken';
-import { JwtAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
 import { CreateCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 
@@ -35,7 +35,7 @@ export class CertificateController {
     return this.certificateService.getCertificates({}, { full });
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(APIKeyAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
     @Param('certificateId') certificateId: string,

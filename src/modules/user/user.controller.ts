@@ -9,14 +9,14 @@ export class UserController {
     private readonly authService: AuthService,
   ) {}
 
-  @Post('')
+  @Post()
   async createUser(
     @Body('address') address: string,
     @Body('message') message: string,
     @Body('signature') signature: string,
     @Body('name') name: string,
   ): Promise<{ message: string; user; token: string }> {
-    const token = await this.authService.authenticate(
+    const { token, publicKey } = await this.authService.authenticate(
       address,
       message,
       signature,
@@ -26,10 +26,8 @@ export class UserController {
       throw new UnauthorizedException('Could not authenticate user');
     }
 
-    const decodedJwt = this.authService.decodeJwt(token);
-    const publicKey = decodedJwt.sub;
     const user = await this.userService.createUser(publicKey, address, name);
 
-    return { message: user.message, user: user.user, token: token };
+    return { ...user, token };
   }
 }
