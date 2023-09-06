@@ -1,12 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+
+import {
+  Injectable,
+  UnauthorizedException,
+  HttpException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ethers } from 'ethers';
 import * as jwt from 'jsonwebtoken';
+import { ethPersonalSignRecoverPublicKey } from '@polybase/eth';
 
 @Injectable()
 export class AuthService {
   constructor(private jwtService: JwtService) {}
-  private readonly JWT_SECRET = 'YOUR_SECRET_FOR_JWT';
 
   async authenticate(
     address: string,
@@ -21,10 +26,26 @@ export class AuthService {
         // const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
         // userService.getUser(publicKey)
       }
-      return this.jwtService.sign({ sub: address });
-      return jwt.sign({ address }, this.JWT_SECRET, { expiresIn: '1d' });
+      const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
+      // TODO: Check if publicKey exists
+      return this.jwtService.sign({ sub: publicKey });
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.log(error);
       throw new UnauthorizedException('Authentication failed.');
+    }
+  }
+
+  public decodeJwt(jwt: string) {
+    try {
+      const decodedJwt: jwt.JwtPayload = this.jwtService.decode(
+        jwt,
+      ) as jwt.JwtPayload;
+      return decodedJwt;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid Token');
     }
   }
 }
