@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Polybase, Collection } from '@polybase/client';
-import { CIDString, Web3Storage, getFilesFromPath } from 'web3.storage';
+import { CIDString, Web3Storage, getFilesFromPath, File } from 'web3.storage';
 import { UploadService } from 'src/shared/web3storage/upload.service';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
@@ -38,6 +38,29 @@ export class ItemService {
       return item;
     } else {
       throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  async uploadToWeb3Storage(
+    file: Express.Multer.File,
+  ): Promise<{ cid: string; url: string }> {
+    const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
+    try {
+      if (!file) {
+        throw new HttpException('file not includedf', HttpStatus.NOT_FOUND);
+      }
+      // Create a new Blob from the buffer
+      const blob = new Blob([file.buffer], { type: file.mimetype });
+
+      // Use the File object from web3.storage
+      const filelike = new File([blob], file.originalname);
+
+      const cid = await client.put([filelike]);
+      const url = this.generateURLfromCID(cid, file.originalname);
+
+      return { cid, url };
+    } catch (error) {
+      throw new HttpException('Error uploading to Web3Storage:', error);
     }
   }
 

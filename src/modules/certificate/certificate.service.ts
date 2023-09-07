@@ -218,7 +218,7 @@ export class CertificateService {
       switch (certificate.reference.type) {
         case 'item': {
           // Instead of accessing the database, this should interact with the api
-          const itemCollection = this.eddieDb.collection('Item');
+          const itemCollection = this.itemCollection;
 
           const itemRecord = await itemCollection
             .record(certificate.reference.id)
@@ -230,7 +230,7 @@ export class CertificateService {
         }
         case 'collection': {
           // Instead of accessing the database, this should interact with the api
-          const collectionCollection = this.khalifaDb.collection('Collection');
+          const collectionCollection = this.collectionsCollection;
 
           const collectionRecord = await collectionCollection
             .record(certificate.reference.id)
@@ -266,6 +266,40 @@ export class CertificateService {
         this.resolveCertificate(record.toJSON(), options),
       ),
     );
+  }
+
+  //get one certificate by unique slug and item/collection data
+  public async getCertificateBySlug(
+    props: { slug: string },
+    options?: RequestOptions,
+  ) {
+    const { slug } = props;
+
+    const { data: certificateRecord } = await this.certificateCollection
+      .where('slug', '==', slug)
+      .get()
+      .then(({ data }) => first(data));
+
+    if (!certificateRecord) {
+      throw new HttpException('Certificate not found', HttpStatus.NOT_FOUND);
+    }
+    //get item/collection data
+    const certificate = certificateRecord;
+    let reference;
+    if (certificate.reference.type === 'item') {
+      const { data: itemRecord } = await this.itemCollection
+        .record(certificate.reference.id)
+        .get();
+      reference = itemRecord;
+    } else if (certificate.reference.type === 'collection') {
+      const { data: collectionRecord } = await this.collectionsCollection
+        .record(certificate.reference.id)
+        .get();
+      reference = collectionRecord;
+    }
+    certificate.reference = reference || certificate.reference;
+
+    return certificateRecord;
   }
 
   public async getCertificatesForUser(

@@ -39,6 +39,13 @@ export class ItemController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('fileupload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.itemService.uploadToWeb3Storage(file);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createItem: CreateItemDto, @User() user: JwtPayload) {
     console.log('user:', user);

@@ -33,6 +33,11 @@ export class CertificateController {
     return this.certificateService.getCertificates({}, { full });
   }
 
+  @Get(':slug')
+  public async getCertificateBySlug(@Param('slug') slug: string) {
+    return this.certificateService.getCertificateBySlug({ slug });
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
