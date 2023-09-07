@@ -39,6 +39,22 @@ export class CertificateController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('/mint/:certificateId')
+  public async mintCertificate(
+    @Param('certificateId') certificateId: string,
+    @Body('message') message: string,
+    @Body('signature') signature: string,
+    @User() user: JwtPayload,
+  ) {
+    return this.certificateService.mintCertificate(
+      { certificateId },
+      message,
+      signature,
+      user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
     @Param('certificateId') certificateId: string,

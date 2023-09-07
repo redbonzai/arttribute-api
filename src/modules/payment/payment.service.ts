@@ -123,7 +123,7 @@ export class PaymentService {
 
     //Confirm transaction on the blockchain
     const provider = new ethers.JsonRpcProvider(
-      'https://celo-alfajores.infura.io/v3/80b986daf63447ceb9978477a1b451c9',
+      `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
     );
 
     const tx = await provider.getTransaction(paymentDto.transactionHash);

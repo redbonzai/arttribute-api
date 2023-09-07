@@ -5,6 +5,9 @@ import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { JwtPayload } from 'jsonwebtoken';
 import { Collection, Polybase } from '@polybase/client';
 import { first, map, pick } from 'lodash';
+import { getSignerData } from '~/shared/util/getSignerData';
+import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
+import { ethers } from 'ethers';
 
 interface RequestOptions {
   full?: boolean;
@@ -197,13 +200,48 @@ export class CertificateService {
     // Web3 -> Create Cert
   }
 
-  public async mintCertificate(props: { certificateId: string }) {
+  public async mintCertificate(
+    props: { certificateId: string },
+    message: string,
+    signature: string,
+    user: JwtPayload,
+  ) {
     const { certificateId } = props;
-    const tokenId = '1234';
-    const updatedItem = await this.itemCollection
+    const { data: certificate } = await this.certificateCollection
+      .record(certificateId)
+      .get();
+    const contractAddress = '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
+
+    const { recoveredAddress, publicKey } = getSignerData(message, signature);
+    // if (publicKey !== user.publicKey) {
+    //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+    // }
+    const provider = new ethers.JsonRpcProvider(
+      `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
+    );
+
+    const privateKey =
+      'Private key of the account that will mint the certificate';
+    const wallet = new ethers.Wallet(privateKey, provider);
+
+    const contract = new ethers.Contract(
+      contractAddress,
+      arttributeCertificateAbi,
+      wallet,
+    );
+
+    const mintCertificateAction = await contract.mintCertificate(
+      recoveredAddress,
+      1,
+      certificateId,
+    );
+
+    const mintedCertificate = await mintCertificateAction.wait();
+    const tokenId = mintCertificateAction;
+    const updatedCert = await this.certificateCollection
       .record(certificateId)
       .call('updateMintedStatus', [true, tokenId]);
-    return updatedItem;
+    return { updatedCert, mintedCertificate, recoveredAddress };
   }
 
   private async resolveCertificate(
