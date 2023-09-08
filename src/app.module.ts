@@ -10,6 +10,8 @@ import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProjectModule } from './modules/project/project.module';
+import { RequestModule } from './modules/request/request.module';
+import { NetworkModule } from './modules/network/network.module';
 
 @Module({
   imports: [
@@ -22,8 +24,11 @@ import { ProjectModule } from './modules/project/project.module';
     UploadModule,
     UserModule,
     ProjectModule,
+    RequestModule,
+    NetworkModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

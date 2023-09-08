@@ -37,8 +37,6 @@ export class AuthService {
       const { recoveredAddress, publicKey } = getSignerData(message, signature);
       if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
         throw new UnauthorizedException('Signature does not match!');
-        // const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
-        // userService.getUser(publicKey)
       }
       const existingUser = await this.userCollection
         .where('address', '==', address)
@@ -124,3 +122,4 @@ export class AuthService {
     return new sha256().update(val).digest('base64');
   }
 }
+

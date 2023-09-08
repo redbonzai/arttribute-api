@@ -22,9 +22,7 @@ export class CertificateController {
     @Body() body: CreateCertificate,
     @User() user: JwtPayload,
   ) {
-    // By the time it's here, it's already been authorized
-    console.log(user);
-    return this.certificateService.createCertificate({
+    return await this.certificateService.createCertificate({
       certificate: body,
       user,
     });
@@ -35,6 +33,27 @@ export class CertificateController {
     return this.certificateService.getCertificates({}, { full });
   }
 
+  @Get(':slug')
+  public async getCertificateBySlug(@Param('slug') slug: string) {
+    return this.certificateService.getCertificateBySlug({ slug });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/mint/:certificateId')
+  public async mintCertificate(
+    @Param('certificateId') certificateId: string,
+    @Body('message') message: string,
+    @Body('signature') signature: string,
+    @User() user: JwtPayload,
+  ) {
+    return this.certificateService.mintCertificate(
+      { certificateId },
+      message,
+      signature,
+      user,
+    );
+  }
+
   @UseGuards(APIKeyAuthGuard)
   @Get('/:certificateId')
   public async getCertificate(
@@ -43,4 +62,11 @@ export class CertificateController {
   ) {
     return this.certificateService.getCertificate({ certificateId }, { full });
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/:userId/references') // TODO: This route structure?
+  public async discoverUserCertificates(@Param('userId') userId: string) {
+    return this.certificateService.discoverUserCertificates({ userId });
+  }
 }
+

@@ -1,10 +1,23 @@
 import {
   IsArray,
+  IsBooleanString,
+  IsDefined,
   IsNotEmpty,
   IsNumber,
   IsNumberString,
+  IsObject,
   IsString,
 } from 'class-validator';
+
+class Price {
+  @IsNotEmpty()
+  @IsNumber()
+  amount!: number;
+
+  @IsNotEmpty()
+  @IsString()
+  currency!: string;
+}
 
 export class ItemDto {
   @IsNotEmpty()
@@ -14,6 +27,10 @@ export class ItemDto {
   @IsNotEmpty()
   @IsString()
   description: string;
+
+  @IsNotEmpty()
+  @IsString()
+  url: string;
 
   @IsString({ each: true })
   @IsArray()
@@ -27,22 +44,19 @@ export class ItemDto {
   @IsString()
   source: string;
 
+  @IsObject()
+  price!: Price;
+
   @IsString({ each: true })
   @IsArray()
   license: string[];
 
   @IsNotEmpty()
-  @IsNumber()
-  price: number;
-
-  @IsString()
-  currency: string;
+  @IsBooleanString()
+  needsRequest: boolean;
 }
 
-export class CreateItemDto extends ItemDto {
-  @IsNotEmpty()
-  @IsNumberString()
-  price: number;
-}
+export class CreateItemDto extends ItemDto {}
 
 export class UpdateItemDto extends ItemDto {}
+
