@@ -118,6 +118,16 @@ export class PaymentService {
       );
     }
 
+    const paymentExists = await this.paymentCollection
+      .record(paymentDto.transactionHash)
+      .get();
+    if (paymentExists) {
+      throw new HttpException(
+        'Payment with the transaction hash already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     //To do: get endpoint from network
     const network = await this.findNetwork(paymentDto.network.chainId);
 
@@ -141,21 +151,24 @@ export class PaymentService {
       throw new HttpException('Transaction failed', HttpStatus.BAD_REQUEST);
     }
     //create payment once transaction is confirmed
-
-    const payment = await this.paymentCollection.create([
-      id,
-      paymentDto.reference.type,
-      paymentDto.reference.id,
-      this.db.collection('User').record(user.publicKey),
-      this.db.collection('User').record(reference.owner.id),
-      paymentDto.amount,
-      paymentDto.currency,
-      paymentType,
-      paymentDto.source,
-      this.db.collection('Network').record(network.id),
-      createdAt,
-    ]);
-    return payment;
+    try {
+      const payment = await this.paymentCollection.create([
+        paymentDto.transactionHash,
+        paymentDto.reference.type,
+        paymentDto.reference.id,
+        this.db.collection('User').record(user.publicKey),
+        this.db.collection('User').record(reference.owner.id),
+        paymentDto.amount,
+        paymentDto.currency,
+        paymentType,
+        paymentDto.source,
+        this.db.collection('Network').record(network.id),
+        createdAt,
+      ]);
+      return payment;
+    } catch (error) {
+      throw new HttpException('Error creating payment', error);
+    }
   }
 
   //get user payments received

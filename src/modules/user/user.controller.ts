@@ -1,9 +1,13 @@
 import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
+import { AuthService } from '../auth/auth.service';
 
 @Controller({ version: '1', path: 'users' })
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
   async createUser(
@@ -12,7 +16,18 @@ export class UserController {
     @Body('signature') signature: string,
     @Body('name') name: string,
   ): Promise<{ message: string; user; token: string }> {
-    return this.userService.createUser(address, message, signature, name);
+    const { token, publicKey } = await this.authService.authenticate(
+      address,
+      message,
+      signature,
+    );
+
+    if (!token) {
+      throw new UnauthorizedException('Could not authenticate user');
+    }
+
+    const user = await this.userService.createUser(publicKey, address, name);
+
+    return { ...user, token };
   }
 }
-

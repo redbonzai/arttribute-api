@@ -192,6 +192,7 @@ export class CertificateService {
       this.db.collection('User').record(user.publicKey),
       certificate.reference.type, // Reference Type (Item, Collection)
       certificate.reference.id,
+      certificateReference.owner,
       certificate.description || 'New Certificate', // Description
       slug.replace(/\s/g, ''),
       new Date().toISOString(),
@@ -206,42 +207,48 @@ export class CertificateService {
     signature: string,
     user: JwtPayload,
   ) {
-    const { certificateId } = props;
-    const { data: certificate } = await this.certificateCollection
-      .record(certificateId)
-      .get();
-    const contractAddress = '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
+    try {
+      const { certificateId } = props;
+      const { data: certificate } = await this.certificateCollection
+        .record(certificateId)
+        .get();
+      const contractAddress = '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
 
-    const { recoveredAddress, publicKey } = getSignerData(message, signature);
-    // if (publicKey !== user.publicKey) {
-    //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
-    // }
-    const provider = new ethers.JsonRpcProvider(
-      `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
-    );
+      const { recoveredAddress, publicKey } = getSignerData(message, signature);
+      // if (publicKey !== user.publicKey) {
+      //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+      // }
+      const provider = new ethers.JsonRpcProvider(
+        `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
+      );
 
-    const privateKey =
-      'Private key of the account that will mint the certificate';
-    const wallet = new ethers.Wallet(privateKey, provider);
+      const privateKey = 'private key';
+      const wallet = new ethers.Wallet(privateKey, provider);
 
-    const contract = new ethers.Contract(
-      contractAddress,
-      arttributeCertificateAbi,
-      wallet,
-    );
+      const contract = new ethers.Contract(
+        contractAddress,
+        arttributeCertificateAbi,
+        wallet,
+      );
 
-    const mintCertificateAction = await contract.mintCertificate(
-      recoveredAddress,
-      1,
-      certificateId,
-    );
+      const mintCertificateAction = await contract.mintCertificate(
+        recoveredAddress,
+        1,
+        certificateId,
+      );
 
-    const mintedCertificate = await mintCertificateAction.wait();
-    const tokenId = mintCertificateAction;
-    const updatedCert = await this.certificateCollection
-      .record(certificateId)
-      .call('updateMintedStatus', [true, tokenId]);
-    return { updatedCert, mintedCertificate, recoveredAddress };
+      const mintedCertificate = await mintCertificateAction.wait();
+      const tokenId = mintCertificateAction;
+      const updatedCert = await this.certificateCollection
+        .record(certificateId)
+        .call('updateMintedStatus', [true, tokenId]);
+      return { updatedCert, mintedCertificate, recoveredAddress };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   private async resolveCertificate(

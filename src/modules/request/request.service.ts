@@ -70,7 +70,7 @@ export class RequestService {
     const id = generateUniqueId();
     const current_time = new Date().toISOString();
 
-    const payment = await this.requestCollection.create([
+    const request = await this.requestCollection.create([
       id,
       requestDto.reference.type,
       requestDto.reference.id,
@@ -82,7 +82,7 @@ export class RequestService {
       current_time,
       current_time,
     ]);
-    return payment;
+    return request;
   }
 
   //get received requests
