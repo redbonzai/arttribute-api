@@ -25,7 +25,7 @@ export class CollectionController {
 
   @Get()
   async getAllCollections() {
-    return this.collectionService.getAllCollections();
+    return await this.collectionService.getAllCollections();
   }
 
   @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
