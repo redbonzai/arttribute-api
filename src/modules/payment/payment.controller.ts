@@ -1,14 +1,28 @@
-import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePayment } from './payment.dto';
+import { JwtPayload } from 'jsonwebtoken';
+import { JwtAuthGuard, User } from '../auth';
 
-@Controller('payments')
+@Controller({ version: '1', path: 'payments' })
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async createPayment(@Body() paymentDto: CreatePayment) {
-    return this.paymentService.createPayment(paymentDto);
+  async createPayment(
+    @Body() paymentDto: CreatePayment,
+    @User() user: JwtPayload,
+  ) {
+    return this.paymentService.createPayment(paymentDto, user);
   }
 
   @Get('/received/:userId')
@@ -26,3 +40,4 @@ export class PaymentController {
     return this.paymentService.getPaymentsBySource(source);
   }
 }
+

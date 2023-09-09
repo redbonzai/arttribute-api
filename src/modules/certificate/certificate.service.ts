@@ -1,30 +1,140 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PolybaseService } from '~/shared/polybase';
 import { v4 } from 'uuid';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { JwtPayload } from 'jsonwebtoken';
 import { Collection, Polybase } from '@polybase/client';
-import { map } from 'lodash';
+import { first, map } from 'lodash';
 import { CollectionService } from '../collection/collection.service';
+import { getSignerData } from '~/shared/util/getSignerData';
+import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
+import { ethers } from 'ethers';
 
 interface RequestOptions {
   full?: boolean;
 }
 @Injectable()
 export class CertificateService {
-  private certificateCollection: Collection<PolybaseCertificate>;
-  private khalifaDb: Polybase;
+  private db: Polybase;
   private eddieDb: Polybase;
+  private certificateCollection: Collection<PolybaseCertificate>;
+  itemCollection: Collection<any>;
+  collectionsCollection: Collection<any>;
+  requestCollection: Collection<any>;
+  paymentCollection: Collection<any>;
 
   constructor(
     private polybaseService: PolybaseService,
     private collectionService: CollectionService,
   ) {
-    this.certificateCollection = polybaseService
-      .app('khalifa')
-      .collection<PolybaseCertificate>('Certificate');
-    this.khalifaDb = polybaseService.app('khalifa');
+    this.db = polybaseService.app('bashy');
     this.eddieDb = polybaseService.app('eddie');
+    this.certificateCollection = this.db.collection('Certificate');
+    this.itemCollection = this.db.collection('Item');
+    this.collectionsCollection = this.db.collection('Collection');
+    this.requestCollection = this.db.collection('PermissionRequest');
+    this.paymentCollection = this.db.collection('Payment');
+  }
+
+  public async findReference(
+    id: string,
+    type: string,
+  ): Promise<{
+    id: string;
+    owner: string;
+    author: string;
+    title: string;
+    type: string;
+    license: string;
+    needsRequest: string;
+    price: { amount: number; currency: string };
+  }> {
+    if (type === 'item') {
+      const { data: item } = await this.itemCollection.record(id).get();
+      if (item) {
+        return {
+          id: item.id,
+          author: item.author,
+          owner: item.owner.id,
+          title: item.title,
+          type: 'item',
+          license: item.license.name,
+          needsRequest: item.needsRequest,
+          price: item.price,
+        };
+      } else {
+        throw new HttpException(
+          'reference record not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } else if (type === 'collection') {
+      const { data: collection } = await this.collectionsCollection
+        .record(id)
+        .get();
+      if (collection) {
+        return {
+          id: collection.id,
+          author: collection.author,
+          owner: collection.owner.id,
+          title: collection.title,
+          type: 'collection',
+          license: collection.license.name,
+          needsRequest: collection.needsRequest,
+          price: collection.price,
+        };
+      } else {
+        throw new HttpException(
+          'reference record not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } else {
+      throw new HttpException(
+        `reference ${type} does not exist`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  //For items and collections that needs permission request, check status of permission request
+  public async checkPermissionRequestStatus(
+    props: { referenceId: string; referenceType: string },
+    user: JwtPayload,
+  ) {
+    const { referenceId, referenceType } = props;
+    const { data: permissionRequest } = await this.requestCollection
+      .where('reference.id', '==', referenceId)
+      .where('reference.type', '==', referenceType)
+      .where('sender', '==', this.db.collection('User').record(user.publicKey))
+      .get()
+      .then(({ data }) => first(data));
+
+    if (permissionRequest) {
+      return permissionRequest;
+    } else {
+      throw new HttpException(
+        'Permission request not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  //payment reference
+  public async findPaymentReference(
+    referenceId: string,
+    referenceType: string,
+    user: JwtPayload,
+  ) {
+    const { data: payment } = await this.paymentCollection
+      .where('reference.id', '==', referenceId)
+      .where('reference.type', '==', referenceType)
+      .where('sender', '==', this.db.collection('User').record(user.publicKey))
+      .get();
+
+    if (payment.length === 0) {
+      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
+    }
   }
 
   public async createCertificate(props: {
@@ -32,14 +142,115 @@ export class CertificateService {
     user: JwtPayload;
   }) {
     const { certificate, user } = props;
-    // Web3 -> Create Cert
+    const certificateReference = await this.findReference(
+      certificate.reference.id,
+      certificate.reference.type,
+    );
+
+    //if requestor is owner
+    if (certificateReference.owner === user.publicKey) {
+      throw new HttpException(
+        'You are the owner of this item/collection. You cannot create a certificate for your own item/collection',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (certificateReference.needsRequest) {
+      const permissionRequest = await this.checkPermissionRequestStatus(
+        {
+          referenceId: certificate.reference.id,
+          referenceType: certificate.reference.type,
+        },
+        user,
+      );
+      if (!permissionRequest.accepted) {
+        throw new HttpException(
+          'Permission request not accepted',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+    }
+
+    if (certificateReference.price.amount > 0) {
+      await this.findPaymentReference(
+        certificate.reference.id,
+        certificate.reference.type,
+        user,
+      );
+      console.log('payment amount:', certificateReference.price.amount);
+    }
+
+    const certificateId = v4();
+    const slug =
+      certificateReference.title.toLowerCase() +
+      '-by' +
+      certificateReference.author.toLowerCase() +
+      '-' +
+      certificateReference.license +
+      '-' +
+      certificateId;
     return await this.certificateCollection.create([
-      v4(), // Id
-      user.sub, // User
-      certificate.description || 'New Certificate', // Description
+      certificateId,
+      this.db.collection('User').record(user.publicKey),
       certificate.reference.type, // Reference Type (Item, Collection)
       certificate.reference.id,
+      certificateReference.owner,
+      certificate.description || 'New Certificate', // Description
+      slug.replace(/\s/g, ''),
+      new Date().toISOString(),
+      false, // Minted Status
     ]);
+    // Web3 -> Create Cert
+  }
+
+  public async mintCertificate(
+    props: { certificateId: string },
+    message: string,
+    signature: string,
+    user: JwtPayload,
+  ) {
+    try {
+      const { certificateId } = props;
+      const { data: certificate } = await this.certificateCollection
+        .record(certificateId)
+        .get();
+      const contractAddress = '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
+
+      const { recoveredAddress, publicKey } = getSignerData(message, signature);
+      // if (publicKey !== user.publicKey) {
+      //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+      // }
+      const provider = new ethers.JsonRpcProvider(
+        `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
+      );
+
+      const privateKey = 'private key';
+      const wallet = new ethers.Wallet(privateKey, provider);
+
+      const contract = new ethers.Contract(
+        contractAddress,
+        arttributeCertificateAbi,
+        wallet,
+      );
+
+      const mintCertificateAction = await contract.mintCertificate(
+        recoveredAddress,
+        1,
+        certificateId,
+      );
+
+      const mintedCertificate = await mintCertificateAction.wait();
+      const tokenId = mintCertificateAction;
+      const updatedCert = await this.certificateCollection
+        .record(certificateId)
+        .call('updateMintedStatus', [true, tokenId]);
+      return { updatedCert, mintedCertificate, recoveredAddress };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   private async resolveCertificate(
@@ -54,32 +265,29 @@ export class CertificateService {
       switch (certificate.reference.type) {
         case 'item': {
           // Instead of accessing the database, this should interact with the api
-          const itemCollection = this.eddieDb.collection('Item');
+          const itemCollection = this.itemCollection;
 
           const itemRecord = await itemCollection
             .record(certificate.reference.id)
             .get();
 
-          // reference = pick(itemRecord, ['block', 'data']);
           reference = itemRecord.data;
           break;
         }
         case 'collection': {
           // Instead of accessing the database, this should interact with the api
-          const collectionCollection = this.khalifaDb.collection('Collection');
+          const collectionCollection = this.collectionsCollection;
 
           const collectionRecord = await collectionCollection
             .record(certificate.reference.id)
             .get();
 
-          // reference = pick(collectionRecord, ['block', 'data']);
           reference = collectionRecord.data;
           break;
         }
       }
     }
     data.data.reference = reference || certificate.reference;
-    // return data;
     return data.data;
   }
 
@@ -104,6 +312,40 @@ export class CertificateService {
         this.resolveCertificate(record.toJSON(), options),
       ),
     );
+  }
+
+  //get one certificate by unique slug and item/collection data
+  public async getCertificateBySlug(
+    props: { slug: string },
+    options?: RequestOptions,
+  ) {
+    const { slug } = props;
+
+    const { data: certificateRecord } = await this.certificateCollection
+      .where('slug', '==', slug)
+      .get()
+      .then(({ data }) => first(data));
+
+    if (!certificateRecord) {
+      throw new HttpException('Certificate not found', HttpStatus.NOT_FOUND);
+    }
+    //get item/collection data
+    const certificate = certificateRecord;
+    let reference;
+    if (certificate.reference.type === 'item') {
+      const { data: itemRecord } = await this.itemCollection
+        .record(certificate.reference.id)
+        .get();
+      reference = itemRecord;
+    } else if (certificate.reference.type === 'collection') {
+      const { data: collectionRecord } = await this.collectionsCollection
+        .record(certificate.reference.id)
+        .get();
+      reference = collectionRecord;
+    }
+    certificate.reference = reference || certificate.reference;
+
+    return certificateRecord;
   }
 
   public async getCertificatesForUser(

@@ -4,11 +4,13 @@ import {
   IsNumber,
   IsNotEmpty,
   ValidateNested,
+  IsDefined,
+  IsIn,
+  IsUUID,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
 
-// temporary classes for user and network
 class User {
   @IsString()
   @IsNotEmpty()
@@ -22,44 +24,30 @@ class User {
 class Network {
   @IsString()
   @IsNotEmpty()
-  id: string;
-
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
   @IsNotEmpty()
-  rpcUrl: string;
-
-  @IsString()
-  @IsNotEmpty()
   chainId: string;
+}
 
-  @IsString()
-  @IsNotEmpty()
-  symbol: string;
+class Reference {
+  @IsDefined()
+  @IsIn(['item', 'collection'])
+  type!: 'item' | 'collection';
+
+  @IsDefined()
+  @IsUUID()
+  id!: string;
 }
 
 export class CreatePayment {
+  @IsDefined()
+  reference!: Reference;
+
   @IsNotEmpty()
   @IsString()
-  id: string;
-
-  @IsArray()
-  @IsNotEmpty()
-  @IsString({ each: true })
-  payedFor: string[];
-
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => User)
-  sender: User;
-
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => User)
-  receiver: User;
+  transactionHash: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -73,7 +61,6 @@ export class CreatePayment {
   @IsString()
   type: string;
 
-  @IsNotEmpty()
   @IsString()
   source: string;
 
@@ -81,10 +68,6 @@ export class CreatePayment {
   @ValidateNested()
   @Type(() => Network)
   network: Network;
-
-  @IsNotEmpty()
-  @IsString()
-  created: string;
 }
 
 // Example JSON for create payment
@@ -112,3 +95,4 @@ export class CreatePayment {
 //   }
 //  "created": "2021-05-05T12:00:00.000Z"
 // }
+

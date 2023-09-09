@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Query,
   Patch,
   Param,
   Delete,
@@ -13,6 +13,7 @@ import {
   MaxFileSizeValidator,
   HttpCode,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ItemService } from './item.service';
@@ -23,13 +24,18 @@ import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { JwtAuthGuard, User } from '../auth';
 import { JwtPayload } from 'jsonwebtoken';
 
+@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
   @Get()
-  findAll() {
-    return this.itemService.findAll();
+  findAll(
+    @Req() req,
+    @Query()
+    query: { source?: string; tags?: string },
+  ) {
+    return this.itemService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -38,32 +44,19 @@ export class ItemController {
     return this.itemService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('fileupload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.itemService.uploadToWeb3Storage(file);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const uniqueName = generateUniqueId();
-          const extension = extname(file.originalname);
-          const filename = `${uniqueName}${extension}`;
-          callback(null, filename);
-        },
-      }),
-    }),
-  )
-  create(
-    //Pipe to limit the file size of uploaded file to 10 MB
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 10000000 })],
-      }),
-    )
-    file: Express.Multer.File,
-    @Body() createItem: CreateItemDto,
-  ) {
-    const filePath = file.destination + '/' + file.originalname;
-    return this.itemService.create(createItem, file);
+  create(@Body() createItem: CreateItemDto, @User() user: JwtPayload) {
+    console.log('user:', user);
+    const userId = user.publicKey;
+    return this.itemService.create(createItem, userId);
   }
 
   @Patch(':id')
@@ -77,7 +70,8 @@ export class ItemController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.itemService.remove(id);
+  remove(@Param('id') id: string, @User() user: JwtPayload) {
+    return this.itemService.remove(id, user);
   }
 }
+

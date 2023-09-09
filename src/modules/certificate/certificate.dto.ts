@@ -36,12 +36,11 @@ class Certificate {
   @IsString()
   description?: string;
 
-  reference!: Reference;
+  @IsDefined()
+  reference: Reference;
 }
 
-export class CreateCertificate extends Certificate {
-  @IsDefined()
-  reference!: Reference;
-}
+export class CreateCertificate extends Certificate {}
 
 export class UpdateCertificate extends Certificate {}
+
