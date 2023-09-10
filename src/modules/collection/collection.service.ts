@@ -2,26 +2,33 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { CreateCollection, CollectionResponse, Item } from './collection.dto';
 import { PolybaseService } from '~/shared/polybase';
 import { LicenseModel } from '../license/license.dto';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class CollectionService {
   db: Polybase;
   eddieDb: Polybase;
+  bashyDb: Polybase;
   collection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
     this.db = polybaseService.app('khalifa');
     this.eddieDb = polybaseService.app('eddie');
+    this.bashyDb = polybaseService.app('bashy');
     this.collection = this.db.collection('Collection');
   }
 
-  async createCollection(createCollectionDto: CreateCollection) {
+  async createCollection(
+    createCollectionDto: CreateCollection,
+    user: JwtPayload,
+  ) {
     const id = generateUniqueId();
 
     const collection = await this.collection.create([
@@ -30,7 +37,7 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      this.db.collection('User').record(createCollectionDto.owner as string),
+      this.bashyDb.collection('User').record(user.publicKey),
       new Date().toISOString(),
       new Date().toISOString(),
       createCollectionDto.license.map((license) =>
@@ -68,8 +75,18 @@ export class CollectionService {
     return collection;
   }
 
-  async changeVisibility(collectionId: string, isPublic: boolean) {
-    await this.getCollection(collectionId);
+  async changeVisibility(
+    collectionId: string,
+    isPublic: boolean,
+    user: JwtPayload,
+  ) {
+    const curr = await this.getCollection(collectionId);
+
+    if (curr.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can change the visibility of a collection',
+      );
+    }
 
     const { data: collection } = await this.collection
       .record(collectionId)
@@ -78,8 +95,18 @@ export class CollectionService {
     return collection;
   }
 
-  async addItemToCollection(collectionId: string, itemId: string) {
+  async addItemToCollection(
+    collectionId: string,
+    itemId: string,
+    user: JwtPayload,
+  ) {
     const collection = await this.getCollection(collectionId);
+
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can add items to a collection',
+      );
+    }
 
     // TODO: integrate with actual Item module
     const record = await this.eddieDb.collection('Item').record(itemId).get();
@@ -108,8 +135,18 @@ export class CollectionService {
     return collections;
   }
 
-  async removeItemFromCollection(collectionId: string, itemId: string) {
+  async removeItemFromCollection(
+    collectionId: string,
+    itemId: string,
+    user: JwtPayload,
+  ) {
     const collection = await this.getCollection(collectionId);
+
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can remove items from a collection',
+      );
+    }
 
     if (!collection.items.find((i) => i.id == itemId))
       throw new NotFoundException('Item not found');
@@ -135,9 +172,13 @@ export class CollectionService {
     return collections;
   }
 
-  async deleteCollection(collectionId: string) {
-    await this.getCollection(collectionId);
+  async deleteCollection(collectionId: string, user: JwtPayload) {
+    const collection = await this.getCollection(collectionId);
 
-    await this.collection.record(collectionId).call('deleteCollection');
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException('Only the owner can delete a collection');
+    }
+
+    await this.collection.record(collectionId).call('del');
   }
 }

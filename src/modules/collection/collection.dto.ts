@@ -8,17 +8,15 @@ import {
 import { Type } from 'class-transformer';
 import { LicenseModel } from '../license/license.dto';
 
-// temporary classes for user, license and Item
 class User {
-  @IsString()
-  @IsNotEmpty()
   id: string;
-
-  @IsString()
-  @IsNotEmpty()
+  publicKey: string;
+  address: string;
   name: string;
+  created: string;
 }
 
+// temporary classes for license and Item
 export class Item {
   @IsString()
   @IsNotEmpty()
@@ -51,10 +49,6 @@ export class CreateCollection {
   @IsNotEmpty()
   @IsString({ each: true })
   tags: string[];
-
-  @IsString()
-  @IsNotEmpty()
-  owner: string | User;
 
   @IsArray()
   @IsNotEmpty()
