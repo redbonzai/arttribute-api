@@ -6,17 +6,27 @@ import {
   Param,
   Patch,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { CollectionService } from './collection.service';
 import { CreateCollection } from './collection.dto';
+import { JwtAuthGuard, User } from '../auth';
+import { JwtPayload } from 'jsonwebtoken';
 
-@Controller('collections')
+@UseGuards(JwtAuthGuard)
+@Controller({ version: '1', path: 'collections' })
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
   @Post()
-  async createCollection(@Body() createCollectionDto: CreateCollection) {
-    return await this.collectionService.createCollection(createCollectionDto);
+  async createCollection(
+    @Body() createCollectionDto: CreateCollection,
+    @User() user: JwtPayload,
+  ) {
+    return await this.collectionService.createCollection(
+      createCollectionDto,
+      user,
+    );
   }
 
   @Get()
@@ -38,10 +48,12 @@ export class CollectionController {
   async changeVisibility(
     @Param('id') collectionId: string,
     @Body('isPublic') isPublic: boolean,
+    @User() user: JwtPayload,
   ) {
     return await this.collectionService.changeVisibility(
       collectionId,
       isPublic,
+      user,
     );
   }
 
@@ -50,10 +62,12 @@ export class CollectionController {
   async addItemToCollection(
     @Param('id') collectionId: string,
     @Body('itemId') itemId: string,
+    @User() user: JwtPayload,
   ) {
     return await this.collectionService.addItemToCollection(
       collectionId,
       itemId,
+      user,
     );
   }
 
@@ -61,15 +75,20 @@ export class CollectionController {
   async removeItemFromCollection(
     @Param('id') collectionId: string,
     @Param('itemId') itemId: string,
+    @User() user: JwtPayload,
   ) {
     return await this.collectionService.removeItemFromCollection(
       collectionId,
       itemId,
+      user,
     );
   }
 
   @Delete(':id')
-  async deleteCollection(@Param('id') collectionId: string) {
-    return await this.collectionService.deleteCollection(collectionId);
+  async deleteCollection(
+    @Param('id') collectionId: string,
+    @User() user: JwtPayload,
+  ) {
+    return await this.collectionService.deleteCollection(collectionId, user);
   }
 }

@@ -6,28 +6,17 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { LicenseModel } from '../license/license.dto';
 
-// temporary classes for user, license and Item
 class User {
-  @IsString()
-  @IsNotEmpty()
   id: string;
-
-  @IsString()
-  @IsNotEmpty()
+  publicKey: string;
+  address: string;
   name: string;
+  created: string;
 }
 
-class License {
-  @IsString()
-  @IsNotEmpty()
-  id: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-}
-
+// temporary classes for license and Item
 export class Item {
   @IsString()
   @IsNotEmpty()
@@ -36,6 +25,11 @@ export class Item {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LicenseModel)
+  license: LicenseModel[];
 }
 
 export class CreateCollection {
@@ -56,35 +50,17 @@ export class CreateCollection {
   @IsString({ each: true })
   tags: string[];
 
-  @IsString()
-  @IsNotEmpty()
-  owner: string | User;
-
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => License)
-  license: License[];
+  @IsNotEmpty()
+  @IsString({ each: true })
+  license: string[] | LicenseModel[];
 }
 
 export class CollectionResponse extends CreateCollection {
   id: string;
   items: Item[];
+  license: LicenseModel[];
   owner: User;
   createdAt: string;
   updatedAt: string;
 }
-
-// Example JSON for create collection
-// {
-//     "title": "test",
-//     "description": "test description",
-//     "tags": ["ai", "ml", "iot"],
-//     "owner": {
-//       "id": "47",
-//       "name": "Ifatos"
-//     },
-//     "license": [
-//       {"id": "1", "name": "A-NC"},
-//       {"id": "2", "name": "A-ND"}
-//     ]
-//   }
