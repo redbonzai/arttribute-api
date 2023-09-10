@@ -66,7 +66,7 @@ export class ItemService {
     const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
     try {
       if (!file) {
-        throw new HttpException('file not includedf', HttpStatus.NOT_FOUND);
+        throw new HttpException('file not included', HttpStatus.NOT_FOUND);
       }
       // Create a new Blob from the buffer
       const blob = new Blob([file.buffer], { type: file.mimetype });
@@ -83,11 +83,7 @@ export class ItemService {
     }
   }
 
-  public async create(
-    createItem: CreateItemDto,
-
-    userId: string,
-  ) {
+  public async create(createItem: CreateItemDto, userId: string) {
     //const filePath = file.destination + '/' + file.filename;
     //const uploadFile = await getFilesFromPath([filePath]);
     //const cid: CIDString = await this.uploadService.upload(uploadFile);
@@ -101,7 +97,7 @@ export class ItemService {
       console.log('No owner');
       throw new UnauthorizedException('Unauthorized');
     }
-
+    console.log(createItem);
     const createdItem = await this.itemCollection.create([
       id,
       createItem.title,
@@ -189,4 +185,3 @@ export class ItemService {
     return url;
   }
 }
-

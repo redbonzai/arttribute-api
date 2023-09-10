@@ -38,23 +38,22 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Post('fileupload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createItem: CreateItemDto, @User() user: JwtPayload) {
-    console.log('user:', user);
     const userId = user.publicKey;
     return this.itemService.create(createItem, userId);
   }
@@ -74,4 +73,3 @@ export class ItemController {
     return this.itemService.remove(id, user);
   }
 }
-

@@ -58,5 +58,25 @@ export class ItemDto {
 
 export class CreateItemDto extends ItemDto {}
 
-export class UpdateItemDto extends ItemDto {}
-
+export class UpdateItemDto extends ItemDto {
+  // @IsString()
+  // title: string;
+  // @IsString()
+  // description: string;
+  // @IsString()
+  // url: string;
+  // @IsString({ each: true })
+  // @IsArray()
+  // tags: string[];
+  // @IsString()
+  // author: string;
+  // @IsString()
+  // source: string;
+  // @IsObject()
+  // price: Price;
+  // @IsString({ each: true })
+  // @IsArray()
+  // license: string[];
+  // @IsBooleanString()
+  // needsRequest: boolean;
+}
