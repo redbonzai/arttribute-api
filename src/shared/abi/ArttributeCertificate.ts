@@ -60,6 +60,25 @@ export const arttributeCertificateAbi = [
       {
         'indexed': false,
         'internalType': 'uint256',
+        'name': '_fromTokenId',
+        'type': 'uint256',
+      },
+      {
+        'indexed': false,
+        'internalType': 'uint256',
+        'name': '_toTokenId',
+        'type': 'uint256',
+      },
+    ],
+    'name': 'BatchMetadataUpdate',
+    'type': 'event',
+  },
+  {
+    'anonymous': false,
+    'inputs': [
+      {
+        'indexed': false,
+        'internalType': 'uint256',
         'name': 'tokenId',
         'type': 'uint256',
       },
@@ -81,8 +100,27 @@ export const arttributeCertificateAbi = [
         'name': 'details',
         'type': 'string',
       },
+      {
+        'indexed': false,
+        'internalType': 'string',
+        'name': 'tokenUri',
+        'type': 'string',
+      },
     ],
     'name': 'CertificateMinted',
+    'type': 'event',
+  },
+  {
+    'anonymous': false,
+    'inputs': [
+      {
+        'indexed': false,
+        'internalType': 'uint256',
+        'name': '_tokenId',
+        'type': 'uint256',
+      },
+    ],
+    'name': 'MetadataUpdate',
     'type': 'event',
   },
   {
@@ -279,6 +317,11 @@ export const arttributeCertificateAbi = [
       {
         'internalType': 'string',
         'name': 'details',
+        'type': 'string',
+      },
+      {
+        'internalType': 'string',
+        'name': 'tokenUri',
         'type': 'string',
       },
     ],
@@ -502,4 +545,3 @@ export const arttributeCertificateAbi = [
     'type': 'function',
   },
 ];
-

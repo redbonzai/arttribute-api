@@ -66,7 +66,7 @@ export class ItemService {
     const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
     try {
       if (!file) {
-        throw new HttpException('file not includedf', HttpStatus.NOT_FOUND);
+        throw new HttpException('file not included', HttpStatus.NOT_FOUND);
       }
       // Create a new Blob from the buffer
       const blob = new Blob([file.buffer], { type: file.mimetype });
