@@ -4,7 +4,8 @@ import { v4 } from 'uuid';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { JwtPayload } from 'jsonwebtoken';
 import { Collection, Polybase } from '@polybase/client';
-import { first, map, pick } from 'lodash';
+import { first, map } from 'lodash';
+import { CollectionService } from '../collection/collection.service';
 import { getSignerData } from '~/shared/util/getSignerData';
 import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
 import { ethers } from 'ethers';
@@ -15,7 +16,6 @@ interface RequestOptions {
 @Injectable()
 export class CertificateService {
   private db: Polybase;
-  private khalifaDb: Polybase;
   private eddieDb: Polybase;
   private certificateCollection: Collection<PolybaseCertificate>;
   itemCollection: Collection<any>;
@@ -23,9 +23,11 @@ export class CertificateService {
   requestCollection: Collection<any>;
   paymentCollection: Collection<any>;
 
-  constructor(private polybaseService: PolybaseService) {
+  constructor(
+    private polybaseService: PolybaseService,
+    private collectionService: CollectionService,
+  ) {
     this.db = polybaseService.app('bashy');
-    this.khalifaDb = polybaseService.app('khalifa');
     this.eddieDb = polybaseService.app('eddie');
     this.certificateCollection = this.db.collection('Certificate');
     this.itemCollection = this.db.collection('Item');
@@ -271,9 +273,8 @@ export class CertificateService {
           const itemRecord = await itemCollection
             .record(certificate.reference.id)
             .get();
-          // .then(({ data }) => first(data));
 
-          reference = pick(itemRecord, ['block', 'data']);
+          reference = itemRecord.data;
           break;
         }
         case 'collection': {
@@ -284,13 +285,13 @@ export class CertificateService {
             .record(certificate.reference.id)
             .get();
 
-          reference = pick(collectionRecord, ['block', 'data']);
+          reference = collectionRecord.data;
           break;
         }
       }
     }
     data.data.reference = reference || certificate.reference;
-    return data;
+    return data.data;
   }
 
   public async getCertificate(
@@ -365,15 +366,16 @@ export class CertificateService {
     );
   }
 
-  public async discoverUserCertificates(props: { userId: string }) {
+  public async discoverUserCertificates(
+    props: { userId: string },
+    options?: RequestOptions,
+  ) {
     const { userId } = props;
     const res = { collections: [], items: [] };
 
-    const { data: collections } = await this.collectionsCollection
-      .where('owner', '==', this.db.collection('User').record(userId))
-      .get();
     // collections
-    const collectionRefs = collections;
+    const collectionRefs =
+      await this.collectionService.getCollectionsForUser(userId);
 
     if (collectionRefs.length !== 0) {
       const collectionIds = map(collectionRefs, 'id');
@@ -386,14 +388,9 @@ export class CertificateService {
             .get();
 
         if (certificatesForCollection.length !== 0) {
-          // map(certificatesForCollection, (certificate) => {
-          //   res.collections.push(certificate.data);
-          // });
           map(certificatesForCollection, async (certificate) => {
             res.collections.push(
-              await this.resolveCertificate(certificate.toJSON(), {
-                full: false,
-              }),
+              await this.resolveCertificate(certificate.toJSON(), options),
             );
           });
         }
@@ -412,21 +409,17 @@ export class CertificateService {
         itemRefs.map((item) => item.data),
         'id',
       );
+
       for (const itemId of itemIds) {
         const { data: certificatesForItem } = await this.certificateCollection
-          .where('reference.id', '==', 'item')
-          .where('reference.type', '==', itemId)
+          .where('reference.type', '==', 'item')
+          .where('reference.id', '==', itemId)
           .get();
 
         if (certificatesForItem.length !== 0) {
-          // map(certificatesForItem, (certificate) => {
-          //   res.items.push(certificate.data);
-          // });
           map(certificatesForItem, async (certificate) => {
             res.items.push(
-              await this.resolveCertificate(certificate.toJSON(), {
-                full: false,
-              }),
+              await this.resolveCertificate(certificate.toJSON(), options),
             );
           });
         }
@@ -442,4 +435,3 @@ export class CertificateService {
     return this.certificateCollection.record(id).call('del');
   }
 }
-

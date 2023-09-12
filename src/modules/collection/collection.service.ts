@@ -2,25 +2,33 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { CreateCollection, CollectionResponse } from './collection.dto';
+import { CreateCollection, CollectionResponse, Item } from './collection.dto';
 import { PolybaseService } from '~/shared/polybase';
+import { LicenseModel } from '../license/license.dto';
+import { JwtPayload } from 'jsonwebtoken';
 
 @Injectable()
 export class CollectionService {
   db: Polybase;
   eddieDb: Polybase;
+  bashyDb: Polybase;
   collection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
     this.db = polybaseService.app('khalifa');
     this.eddieDb = polybaseService.app('eddie');
+    this.bashyDb = polybaseService.app('bashy');
     this.collection = this.db.collection('Collection');
   }
 
-  async createCollection(createCollectionDto: CreateCollection) {
+  async createCollection(
+    createCollectionDto: CreateCollection,
+    user: JwtPayload,
+  ) {
     const id = generateUniqueId();
 
     const collection = await this.collection.create([
@@ -29,11 +37,11 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      this.db.collection('User').record(createCollectionDto.owner as string),
+      this.bashyDb.collection('User').record(user.publicKey),
       new Date().toISOString(),
       new Date().toISOString(),
       createCollectionDto.license.map((license) =>
-        this.db.collection('License').record(license.id),
+        this.eddieDb.collection('License').record(license),
       ),
     ]);
     return collection;
@@ -46,12 +54,14 @@ export class CollectionService {
     return collections.map((collection) => collection.data);
   }
 
-  async getCollectionsForUser(userId: string): Promise<CollectionResponse[]> {
+  public async getCollectionsForUser(
+    userId: string,
+  ): Promise<CollectionResponse[]> {
     const { data: collections } = await this.collection
       .where('owner', '==', this.db.collection('User').record(userId))
       .get();
 
-    if (!collections || collections.length === 0)
+    if (!collections)
       throw new NotFoundException('No collections found for this user');
     return collections.map((collection) => collection.data);
   }
@@ -65,8 +75,18 @@ export class CollectionService {
     return collection;
   }
 
-  async changeVisibility(collectionId: string, isPublic: boolean) {
-    await this.getCollection(collectionId);
+  async changeVisibility(
+    collectionId: string,
+    isPublic: boolean,
+    user: JwtPayload,
+  ) {
+    const curr = await this.getCollection(collectionId);
+
+    if (curr.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can change the visibility of a collection',
+      );
+    }
 
     const { data: collection } = await this.collection
       .record(collectionId)
@@ -75,41 +95,90 @@ export class CollectionService {
     return collection;
   }
 
-  async addItemToCollection(collectionId: string, itemId: string) {
+  async addItemToCollection(
+    collectionId: string,
+    itemId: string,
+    user: JwtPayload,
+  ) {
     const collection = await this.getCollection(collectionId);
 
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can add items to a collection',
+      );
+    }
+
     // TODO: integrate with actual Item module
-    const item = await this.eddieDb.collection('Item').record(itemId).get();
-    if (!item) throw new NotFoundException('Item not found');
+    const record = await this.eddieDb.collection('Item').record(itemId).get();
+    const item = record.data;
+
+    if (!record || !item) throw new NotFoundException('Item not found');
 
     if (collection.items.find((i) => i.id == item.id))
       throw new ConflictException('Item already in collection');
 
+    const newLicenses = [];
+
+    for (const license of item.license) {
+      if (!collection.license.find((l) => l.id == license.id)) {
+        newLicenses.push(license);
+      }
+    }
+
     const { data: collections } = await this.collection
       .record(collectionId)
-      .call('addItemToCollection', [item]);
+      .call('addItemToCollection', [
+        record,
+        newLicenses.length === 0 ? undefined : newLicenses,
+      ]);
 
     return collections;
   }
 
-  async removeItemFromCollection(collectionId: string, itemId: string) {
+  async removeItemFromCollection(
+    collectionId: string,
+    itemId: string,
+    user: JwtPayload,
+  ) {
     const collection = await this.getCollection(collectionId);
+
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException(
+        'Only the owner can remove items from a collection',
+      );
+    }
 
     if (!collection.items.find((i) => i.id == itemId))
       throw new NotFoundException('Item not found');
 
-    const items: any = collection.items.filter((i) => i.id != itemId);
+    const items: Item[] = collection.items.filter((i) => i.id != itemId);
+
+    const newLicenses: LicenseModel[] = [];
+    const seen = new Set<string>();
+
+    for (const item of items) {
+      for (const license of item.license) {
+        if (!seen.has(license.id)) {
+          seen.add(license.id);
+          newLicenses.push(license);
+        }
+      }
+    }
 
     const { data: collections } = await this.collection
       .record(collectionId)
-      .call('removeItemFromCollection', [items]);
+      .call('removeItemFromCollection', [items as any, newLicenses]);
 
     return collections;
   }
 
-  async deleteCollection(collectionId: string) {
-    await this.getCollection(collectionId);
+  async deleteCollection(collectionId: string, user: JwtPayload) {
+    const collection = await this.getCollection(collectionId);
 
-    await this.collection.record(collectionId).call('deleteCollection');
+    if (collection.owner.id !== user.publicKey) {
+      throw new UnauthorizedException('Only the owner can delete a collection');
+    }
+
+    await this.collection.record(collectionId).call('del');
   }
 }
