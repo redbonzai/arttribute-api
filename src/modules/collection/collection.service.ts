@@ -19,7 +19,7 @@ export class CollectionService {
   collection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('khalifa');
+    this.db = polybaseService.app('bashy'); //changed from Khalifa to bashy for testing
     this.eddieDb = polybaseService.app('eddie');
     this.bashyDb = polybaseService.app('bashy');
     this.collection = this.db.collection('Collection');
@@ -28,6 +28,7 @@ export class CollectionService {
   async createCollection(
     createCollectionDto: CreateCollection,
     user: JwtPayload,
+    project: any,
   ) {
     const id = generateUniqueId();
 
@@ -37,12 +38,17 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      this.bashyDb.collection('User').record(user.publicKey),
-      new Date().toISOString(),
-      new Date().toISOString(),
-      createCollectionDto.license.map((license) =>
-        this.eddieDb.collection('License').record(license),
+      this.bashyDb.collection('User').record(user.sub),
+      this.bashyDb.collection('Project').record(project.id),
+      createCollectionDto.license.join(''),
+      createCollectionDto.license.map((license_id) =>
+        this.eddieDb.collection('License').record(license_id),
       ),
+      createCollectionDto.price?.amount || 0,
+      createCollectionDto.price?.currency || 'none',
+      createCollectionDto.needsRequest,
+      new Date().toISOString(),
+      new Date().toISOString(),
     ]);
     return collection;
   }
@@ -82,7 +88,7 @@ export class CollectionService {
   ) {
     const curr = await this.getCollection(collectionId);
 
-    if (curr.owner.id !== user.publicKey) {
+    if (curr.owner.id !== user.sub) {
       throw new UnauthorizedException(
         'Only the owner can change the visibility of a collection',
       );
@@ -102,14 +108,14 @@ export class CollectionService {
   ) {
     const collection = await this.getCollection(collectionId);
 
-    if (collection.owner.id !== user.publicKey) {
+    if (collection.owner.id !== user.sub) {
       throw new UnauthorizedException(
         'Only the owner can add items to a collection',
       );
     }
 
     // TODO: integrate with actual Item module
-    const record = await this.eddieDb.collection('Item').record(itemId).get();
+    const record = await this.bashyDb.collection('Item').record(itemId).get();
     const item = record.data;
 
     if (!record || !item) throw new NotFoundException('Item not found');
@@ -119,8 +125,8 @@ export class CollectionService {
 
     const newLicenses = [];
 
-    for (const license of item.license) {
-      if (!collection.license.find((l) => l.id == license.id)) {
+    for (const license of item.license.reference) {
+      if (!collection.license.reference.find((l) => l.id == license.id)) {
         newLicenses.push(license);
       }
     }
@@ -142,7 +148,7 @@ export class CollectionService {
   ) {
     const collection = await this.getCollection(collectionId);
 
-    if (collection.owner.id !== user.publicKey) {
+    if (collection.owner.id !== user.sub) {
       throw new UnauthorizedException(
         'Only the owner can remove items from a collection',
       );
@@ -175,10 +181,11 @@ export class CollectionService {
   async deleteCollection(collectionId: string, user: JwtPayload) {
     const collection = await this.getCollection(collectionId);
 
-    if (collection.owner.id !== user.publicKey) {
+    if (collection.owner.id !== user.sub) {
       throw new UnauthorizedException('Only the owner can delete a collection');
     }
 
     await this.collection.record(collectionId).call('del');
   }
 }
+

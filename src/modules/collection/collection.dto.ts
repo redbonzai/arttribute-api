@@ -4,6 +4,9 @@ import {
   IsArray,
   ValidateNested,
   IsBoolean,
+  IsNumber,
+  IsObject,
+  IsBooleanString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LicenseModel } from '../license/license.dto';
@@ -32,6 +35,16 @@ export class Item {
   license: LicenseModel[];
 }
 
+class Price {
+  @IsNotEmpty()
+  @IsNumber()
+  amount!: number;
+
+  @IsNotEmpty()
+  @IsString()
+  currency!: string;
+}
+
 export class CreateCollection {
   @IsString()
   @IsNotEmpty()
@@ -50,17 +63,25 @@ export class CreateCollection {
   @IsString({ each: true })
   tags: string[];
 
+  @IsObject()
+  price!: Price;
+
   @IsArray()
   @IsNotEmpty()
   @IsString({ each: true })
-  license: string[] | LicenseModel[];
+  license: string[];
+
+  @IsNotEmpty()
+  @IsBooleanString()
+  needsRequest: boolean;
 }
 
 export class CollectionResponse extends CreateCollection {
   id: string;
   items: Item[];
-  license: LicenseModel[];
+  license: any;
   owner: User;
   createdAt: string;
   updatedAt: string;
 }
+

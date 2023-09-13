@@ -72,7 +72,7 @@ export class AuthService {
       generateUniqueId(),
       this.db.collection('User').record(userId),
       this.db.collection('Project').record(projectId),
-      ' ',
+      '',
       this.hash(apiKey),
       createdAt,
     ]);

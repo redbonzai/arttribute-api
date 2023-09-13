@@ -73,9 +73,13 @@ export class CertificateService {
         .record(id)
         .get();
       if (collection) {
+        const { data: owner } = await this.db
+          .collection('User')
+          .record(collection.owner.id)
+          .get();
         return {
           id: collection.id,
-          author: collection.author,
+          author: owner.name,
           owner: collection.owner.id,
           title: collection.title,
           type: 'collection',
@@ -106,7 +110,7 @@ export class CertificateService {
     const { data: permissionRequest } = await this.requestCollection
       .where('reference.id', '==', referenceId)
       .where('reference.type', '==', referenceType)
-      .where('sender', '==', this.db.collection('User').record(user.publicKey))
+      .where('sender', '==', this.db.collection('User').record(user.sub))
       .get()
       .then(({ data }) => first(data));
 
@@ -129,7 +133,7 @@ export class CertificateService {
     const { data: payment } = await this.paymentCollection
       .where('reference.id', '==', referenceId)
       .where('reference.type', '==', referenceType)
-      .where('sender', '==', this.db.collection('User').record(user.publicKey))
+      .where('sender', '==', this.db.collection('User').record(user.sub))
       .get();
 
     if (payment.length === 0) {
@@ -148,7 +152,7 @@ export class CertificateService {
     );
 
     //if requestor is owner
-    if (certificateReference.owner === user.publicKey) {
+    if (certificateReference.owner === user.sub) {
       throw new HttpException(
         'You are the owner of this item/collection. You cannot create a certificate for your own item/collection',
         HttpStatus.UNAUTHORIZED,
@@ -191,7 +195,7 @@ export class CertificateService {
       certificateId;
     return await this.certificateCollection.create([
       certificateId,
-      this.db.collection('User').record(user.publicKey),
+      this.db.collection('User').record(user.sub),
       certificate.reference.type, // Reference Type (Item, Collection)
       certificate.reference.id,
       certificateReference.owner,
@@ -218,7 +222,7 @@ export class CertificateService {
       const tokenURI =
         'https://bafybeiekhfonwnc7uqot6t3wdu45ncip2bwfor35zizapzre6dijgrklkm.ipfs.w3s.link/cf555ba7-5a62-48ae-91a8-be3cc7a1b60e.jpg';
       const { recoveredAddress, publicKey } = getSignerData(message, signature);
-      // if (publicKey !== user.publicKey) {
+      // if (publicKey !== user.sub) {
       //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
       // }
       const provider = new ethers.JsonRpcProvider(
@@ -435,3 +439,4 @@ export class CertificateService {
     return this.certificateCollection.record(id).call('del');
   }
 }
+
