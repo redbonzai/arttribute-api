@@ -21,8 +21,10 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { JwtAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
 import { JwtPayload } from 'jsonwebtoken';
+import { Project } from '../auth/decorators/project.decorator';
+import { PolybaseProject } from '../project/project.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
@@ -52,21 +54,27 @@ export class ItemController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseGuards(APIKeyAuthGuard)
   @Post()
-  create(@Body() createItem: CreateItemDto, @User() user: JwtPayload) {
-    console.log('user:', user);
-    const userId = user.publicKey;
-    return this.itemService.create(createItem, userId);
+  create(
+    @Body() createItem: CreateItemDto,
+    @User() user: JwtPayload,
+    @Project() project: any,
+  ) {
+    return this.itemService.create(createItem, user, project);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(APIKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   update(
     @Param('id') id: string,
     @Body() updateItem: UpdateItemDto,
     @User() user: JwtPayload,
+    @Project() project: any,
   ) {
-    return this.itemService.update(id, updateItem, user);
+    return this.itemService.update(id, updateItem, user, project);
   }
 
   @Delete(':id')

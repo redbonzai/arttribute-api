@@ -12,6 +12,12 @@ class User {
   name: string;
 }
 
+export class PolybaseProject {
+  id: string;
+  name: string;
+  url: string;
+}
+
 export class ProjectDto {
   @IsNotEmpty()
   @IsString()
@@ -43,3 +49,4 @@ export class CreateProject extends ProjectDto {
 }
 
 export class UpdateProject extends ProjectDto {}
+

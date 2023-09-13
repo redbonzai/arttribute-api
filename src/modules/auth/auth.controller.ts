@@ -37,7 +37,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('api-key/:id')
   async createAPIKey(@Param('id') projectId: string, @User() user: JwtPayload) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     const keyData = await this.authService.createKey(userId, projectId);
     const createKeyResult = {
       message: 'Key created successfully',

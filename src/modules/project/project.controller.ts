@@ -21,7 +21,7 @@ export class ProjectController {
     @Body() projectDto: CreateProject,
     @User() user: JwtPayload,
   ) {
-    return this.projectService.createProject(projectDto, user.publicKey);
+    return this.projectService.createProject(projectDto, user.sub);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -34,7 +34,7 @@ export class ProjectController {
     return this.projectService.updateProject(
       updateProjectDto,
       projectId,
-      user.publicKey,
+      user.sub,
     );
   }
 }

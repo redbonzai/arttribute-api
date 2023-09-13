@@ -40,9 +40,9 @@ export class ItemDto {
   @IsString()
   author: string;
 
-  @IsNotEmpty()
-  @IsString()
-  source: string;
+  // @IsNotEmpty()
+  // @IsString()
+  // source: string;
 
   @IsObject()
   price!: Price;

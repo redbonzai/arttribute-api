@@ -10,22 +10,26 @@ import {
 } from '@nestjs/common';
 import { CollectionService } from './collection.service';
 import { CreateCollection } from './collection.dto';
-import { JwtAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
 import { JwtPayload } from 'jsonwebtoken';
+import { Project } from '../auth/decorators/project.decorator';
 
-@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'collections' })
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(APIKeyAuthGuard)
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,
     @User() user: JwtPayload,
+    @Project() project: any,
   ) {
     return await this.collectionService.createCollection(
       createCollectionDto,
       user,
+      project,
     );
   }
 
@@ -58,6 +62,7 @@ export class CollectionController {
   }
 
   // TODO: check on the API structure for adding and removing items from a collection
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
@@ -71,6 +76,7 @@ export class CollectionController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id/items/:itemId')
   async removeItemFromCollection(
     @Param('id') collectionId: string,
@@ -92,3 +98,4 @@ export class CollectionController {
     return await this.collectionService.deleteCollection(collectionId, user);
   }
 }
+

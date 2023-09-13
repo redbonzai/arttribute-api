@@ -93,7 +93,11 @@ export class PaymentService {
     }
   }
 
-  async createPayment(paymentDto: CreatePayment, user: JwtPayload) {
+  async createPayment(
+    paymentDto: CreatePayment,
+    user: JwtPayload,
+    project: any,
+  ) {
     const id = generateUniqueId();
     const createdAt = new Date().toISOString();
     const reference = await this.findReference(
@@ -103,7 +107,7 @@ export class PaymentService {
     const paymentType = reference.price.amount > 0 ? 'fee' : 'gift';
 
     //check if sender is not the owner of the reference
-    if (reference.owner.id === user.publicKey) {
+    if (reference.owner.id === user.sub) {
       throw new HttpException(
         'You cannot pay for your own item',
         HttpStatus.BAD_REQUEST,
@@ -118,15 +122,15 @@ export class PaymentService {
       );
     }
 
-    const paymentExists = await this.paymentCollection
-      .record(paymentDto.transactionHash)
-      .get();
-    if (paymentExists) {
-      throw new HttpException(
-        'Payment with the transaction hash already exists',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    // const paymentExists = await this.paymentCollection
+    //   .where('transactionHash', '==', paymentDto.transactionHash)
+    //   .get();
+    // if (paymentExists) {
+    //   throw new HttpException(
+    //     'Payment with the transaction hash already exists',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
 
     //To do: get endpoint from network
     const network = await this.findNetwork(paymentDto.network.chainId);
@@ -137,12 +141,15 @@ export class PaymentService {
     );
 
     const tx = await provider.getTransaction(paymentDto.transactionHash);
-    if (
-      (tx && tx.to.toLowerCase() != reference.owner.address.toLowerCase()) ||
-      ethers.formatEther(tx.value) < paymentDto.amount.toString()
-    ) {
+    if (tx && tx.to.toLowerCase() != reference.owner.address.toLowerCase()) {
       throw new HttpException(
-        'Invalid transaction hash',
+        'Invalid transaction hash: receiver does not match',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (ethers.formatEther(tx.value) < paymentDto.amount.toString()) {
+      throw new HttpException(
+        'Invalid transaction hash: amount does not match',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -153,15 +160,17 @@ export class PaymentService {
     //create payment once transaction is confirmed
     try {
       const payment = await this.paymentCollection.create([
-        paymentDto.transactionHash,
+        //paymentDto.transactionHash,
         paymentDto.reference.type,
         paymentDto.reference.id,
-        this.db.collection('User').record(user.publicKey),
+        paymentDto.transactionHash,
+        this.db.collection('User').record(user.sub),
         this.db.collection('User').record(reference.owner.id),
         paymentDto.amount,
         paymentDto.currency,
         paymentType,
-        paymentDto.source,
+        //project.name,
+        this.db.collection('Project').record(project.id),
         this.db.collection('Network').record(network.id),
         createdAt,
       ]);
@@ -172,18 +181,18 @@ export class PaymentService {
   }
 
   //get user payments received
-  async getUserPaymentsReceived(userId: string) {
+  async getUserPaymentsReceived(user: JwtPayload) {
     const payments = await this.paymentCollection
-      .where('receiver', '==', this.db.collection('User').record(userId))
+      .where('receiver', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
       .get();
     return payments;
   }
 
   //get user payments sent
-  async getUserPaymentsSent(userId: string) {
+  async getUserPaymentsSent(user: JwtPayload) {
     const payments = await this.paymentCollection
-      .where('sender', '==', this.db.collection('User').record(userId))
+      .where('sender', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
       .get();
     return payments;

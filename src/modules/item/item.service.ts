@@ -66,7 +66,7 @@ export class ItemService {
     const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
     try {
       if (!file) {
-        throw new HttpException('file not includedf', HttpStatus.NOT_FOUND);
+        throw new HttpException('file not included', HttpStatus.NOT_FOUND);
       }
       // Create a new Blob from the buffer
       const blob = new Blob([file.buffer], { type: file.mimetype });
@@ -85,8 +85,8 @@ export class ItemService {
 
   public async create(
     createItem: CreateItemDto,
-
-    userId: string,
+    user: JwtPayload,
+    project: any, //should have type Project
   ) {
     //const filePath = file.destination + '/' + file.filename;
     //const uploadFile = await getFilesFromPath([filePath]);
@@ -96,7 +96,7 @@ export class ItemService {
 
     const id = generateUniqueId();
     const current_time = new Date().toISOString();
-    const owner = await this.userService.getUserFromPublicKey(userId);
+    const owner = await this.userService.getUserFromPublicKey(user.sub);
     if (!owner) {
       console.log('No owner');
       throw new UnauthorizedException('Unauthorized');
@@ -109,8 +109,9 @@ export class ItemService {
       createItem.url,
       createItem.tags,
       createItem.author,
-      this.db.collection('User').record(userId),
-      createItem.source,
+      this.db.collection('User').record(user.sub),
+      project.name,
+      this.db.collection('Project').record(project.id),
       createItem.license.join(''),
       createItem.license.map((license_id) =>
         LicenseCollection.record(license_id),
@@ -124,7 +125,12 @@ export class ItemService {
     return createdItem;
   }
 
-  public async update(id: string, updateItem: UpdateItemDto, user: JwtPayload) {
+  public async update(
+    id: string,
+    updateItem: UpdateItemDto,
+    user: JwtPayload,
+    project: any,
+  ) {
     const oldItem = await this.findOne(id);
     const current_time = new Date().toISOString();
     const LicenseCollection = this.eddiedb.collection('License');
@@ -150,7 +156,7 @@ export class ItemService {
         updateItem.description || oldItem.data.description,
         updateItem.tags || oldItem.data.tags,
         updateItem.author || oldItem.data.author,
-        updateItem.source || oldItem.data.source,
+        project.nams || oldItem.data.project.name,
         updateItem.license.join('') || oldItem.data.license.name,
         licenseReference,
         updateItem.price.amount || oldItem.data.price.priceAmount,
