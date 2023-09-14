@@ -13,7 +13,7 @@ export class APIKeyStrategy extends PassportStrategy(
   constructor(private authService: AuthService) {
     super(
       {
-        header: 'Authorization',
+        header: 'ProjectAuthorization',
         prefix: 'Bearer ',
       },
       true,
@@ -35,7 +35,6 @@ export class APIKeyStrategy extends PassportStrategy(
         this.authService.hash(apiKey),
       );
       (req as any).project = project || null;
-      console.log(project);
     } catch (err) {
       console.log(err);
       error = new UnauthorizedException();
@@ -43,3 +42,4 @@ export class APIKeyStrategy extends PassportStrategy(
     return verified(error, project, info);
   }
 }
+

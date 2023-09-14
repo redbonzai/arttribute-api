@@ -44,7 +44,10 @@ export class AuthService {
       if (!first(existingUser.data)?.data) {
         throw new UnauthorizedException('User does not exist!');
       }
-      const token = this.jwtService.sign({ address, publicKey });
+      const token = this.jwtService.sign({
+        sub: publicKey,
+        wallet_address: address,
+      });
       return { token, publicKey };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -69,7 +72,7 @@ export class AuthService {
       generateUniqueId(),
       this.db.collection('User').record(userId),
       this.db.collection('Project').record(projectId),
-      ' ',
+      '',
       this.hash(apiKey),
       createdAt,
     ]);

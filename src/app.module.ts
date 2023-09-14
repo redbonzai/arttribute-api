@@ -9,6 +9,7 @@ import { LicenseModule } from './modules/license/license.module';
 import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CollectionModule } from './modules/collection/collection.module';
 import { ProjectModule } from './modules/project/project.module';
 import { RequestModule } from './modules/request/request.module';
 import { NetworkModule } from './modules/network/network.module';
@@ -18,6 +19,7 @@ import { NetworkModule } from './modules/network/network.module';
     AuthModule,
     PolybaseModule,
     CertificateModule,
+    CollectionModule,
     PaymentModule,
     ItemModule,
     LicenseModule,
@@ -31,4 +33,3 @@ import { NetworkModule } from './modules/network/network.module';
   providers: [AppService],
 })
 export class AppModule {}
-

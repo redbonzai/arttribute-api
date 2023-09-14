@@ -9,4 +9,3 @@ import { CollectionModule } from '../collection/collection.module';
   providers: [CertificateService],
 })
 export class CertificateModule {}
-
