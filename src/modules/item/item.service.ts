@@ -19,7 +19,6 @@ export class ItemService {
   private readonly db: Polybase;
   private readonly eddiedb: Polybase;
   private readonly itemCollection: Collection<any>;
-  private readonly tagCollection: Collection<any>;
 
   constructor(
     private polybaseService: PolybaseService,
@@ -29,7 +28,6 @@ export class ItemService {
     this.db = polybaseService.app('bashy');
     this.eddiedb = polybaseService.app('eddie');
     this.itemCollection = this.db.collection('Item');
-    this.tagCollection = this.eddiedb.collection('Tag');
   }
 
   public async recordExists(id: string) {
