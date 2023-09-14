@@ -40,13 +40,12 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.itemService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // DEPRECATED
   @Post('fileupload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
@@ -56,12 +55,19 @@ export class ItemController {
   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Post()
-  create(
+  @UseInterceptors(FileInterceptor('file'))
+  async create(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 10000000 })],
+      }),
+    )
+    file: Express.Multer.File,
     @Body() createItem: CreateItemDto,
     @User() user: JwtPayload,
     @Project() project: any,
   ) {
-    return this.itemService.create(createItem, user, project);
+    return this.itemService.create(file, createItem, user, project);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -82,4 +88,3 @@ export class ItemController {
     return this.itemService.remove(id, user);
   }
 }
-

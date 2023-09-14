@@ -1,12 +1,14 @@
 import {
   IsArray,
   IsBooleanString,
+  IsBoolean,
   IsDefined,
   IsNotEmpty,
   IsNumber,
   IsNumberString,
   IsObject,
   IsString,
+  IsIn,
 } from 'class-validator';
 
 class Price {
@@ -28,10 +30,6 @@ export class ItemDto {
   @IsString()
   description: string;
 
-  @IsNotEmpty()
-  @IsString()
-  url: string;
-
   @IsString({ each: true })
   @IsArray()
   tags: string[];
@@ -40,15 +38,21 @@ export class ItemDto {
   @IsString()
   author: string;
 
-  // @IsNotEmpty()
-  // @IsString()
-  // source: string;
+  @IsNotEmpty()
+  @IsString()
+  source: string;
 
-  @IsObject()
-  price!: Price;
+  @IsNotEmpty()
+  @IsNumberString()
+  price_amount: string;
+
+  @IsNotEmpty()
+  @IsString()
+  price_currency: Price;
 
   @IsString({ each: true })
   @IsArray()
+  @IsIn(['ATR', 'NCM', 'NDR'], { each: true })
   license: string[];
 
   @IsNotEmpty()
@@ -58,5 +62,25 @@ export class ItemDto {
 
 export class CreateItemDto extends ItemDto {}
 
-export class UpdateItemDto extends ItemDto {}
-
+export class UpdateItemDto extends ItemDto {
+  @IsString()
+  title: string;
+  @IsString()
+  description: string;
+  @IsString()
+  url: string;
+  @IsString({ each: true })
+  @IsArray()
+  tags: string[];
+  @IsString()
+  author: string;
+  @IsString()
+  source: string;
+  @IsObject()
+  price: Price;
+  @IsString({ each: true })
+  @IsArray()
+  license: string[];
+  @IsBooleanString()
+  needsRequest: boolean;
+}
