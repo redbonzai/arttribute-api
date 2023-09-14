@@ -4,6 +4,8 @@ import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
 import { AuthService } from '../auth.service';
 import { trim } from 'lodash';
 
+type VerifiedCallback = (err: any, user: any, info?: any) => void;
+
 @Injectable()
 export class APIKeyStrategy extends PassportStrategy(
   HeaderAPIKeyStrategy,
@@ -17,7 +19,7 @@ export class APIKeyStrategy extends PassportStrategy(
         prefix: 'Bearer ',
       },
       true,
-      (apiKey: string, verified: Function, req: Request) => {
+      (apiKey: string, verified: VerifiedCallback, req: Request) => {
         return this.validate(trim(apiKey), verified, req);
       },
     );
@@ -25,7 +27,7 @@ export class APIKeyStrategy extends PassportStrategy(
 
   //   authenticate();
 
-  async validate(apiKey: string, verified: Function, req: Request) {
+  async validate(apiKey: string, verified: VerifiedCallback, req: Request) {
     let error = null;
     let project;
     let info;
@@ -42,4 +44,3 @@ export class APIKeyStrategy extends PassportStrategy(
     return verified(error, project, info);
   }
 }
-

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 
 @Controller({ version: '1', path: 'users' })
@@ -22,4 +22,3 @@ export class UserController {
     return { user };
   }
 }
-

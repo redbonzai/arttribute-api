@@ -7,8 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtPayload } from 'jsonwebtoken';
-import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 
@@ -20,7 +19,7 @@ export class CertificateController {
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
   ) {
     return await this.certificateService.createCertificate({
       certificate: body,
@@ -44,7 +43,7 @@ export class CertificateController {
     @Param('certificateId') certificateId: string,
     @Body('message') message: string,
     @Body('signature') signature: string,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
   ) {
     return this.certificateService.mintCertificate(
       { certificateId },

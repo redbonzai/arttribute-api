@@ -1,4 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { PolybaseService } from '~/shared/polybase';
 import { LicenseModel } from './license.dto';
@@ -23,7 +27,7 @@ export class LicenseService {
     if (item) {
       return item;
     } else {
-      throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('record not found');
     }
   }
 
@@ -49,12 +53,9 @@ export class LicenseService {
     } catch (error) {
       switch (error.code) {
         case 'not-found':
-          throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+          throw new NotFoundException('record not found');
         default:
-          throw new HttpException(
-            'record could not be deleted',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
+          throw new InternalServerErrorException('record could not be deleted');
       }
     }
   }

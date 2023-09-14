@@ -35,7 +35,11 @@ async function bootstrap() {
   );
   //cors
   app.enableCors();
-  await app.listen(5000);
+
+  const port = process.env.PORT || 5000;
+
+  await app.listen(port, () => {
+    console.log(`Listening on ${port}`);
+  });
 }
 bootstrap();
-

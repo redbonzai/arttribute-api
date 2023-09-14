@@ -1,18 +1,18 @@
 import {
   Injectable,
-  HttpException,
-  HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Polybase, Collection } from '@polybase/client';
-import { CIDString, Web3Storage, getFilesFromPath, File } from 'web3.storage';
+import { Collection, Polybase, Query } from '@polybase/client';
+import { map, without } from 'lodash';
 import { UploadService } from 'src/shared/web3storage/upload.service';
+import { File, Web3Storage } from 'web3.storage';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { CreateItemDto, UpdateItemDto } from './item.dto';
-import { Jwt, JwtPayload } from 'jsonwebtoken';
+import { UserPayload } from '../auth';
 import { UserService } from '../user/user.service';
-import { map, without } from 'lodash';
+import { CreateItemDto, UpdateItemDto } from './item.dto';
 
 @Injectable()
 export class ItemService {
@@ -36,10 +36,10 @@ export class ItemService {
   }
 
   public async findAll(query: any) {
-    let reference = await this.itemCollection;
-    let builder: any = reference;
+    const reference = await this.itemCollection;
+    let builder: Query<any>;
     if (query.source) {
-      builder = builder
+      builder = (builder || reference)
         .where('source', '>=', query.source)
         .where('source', '<', `${query.source}~`);
     }
@@ -51,7 +51,7 @@ export class ItemService {
 
       const items = map(raw_items, function (item) {
         let match = true;
-        for (let i in tags) {
+        for (const i in tags) {
           console.log('Tag: ' + i);
           if (!item.data.tags.includes(tags[i])) {
             match = false;
@@ -73,7 +73,7 @@ export class ItemService {
     if (item) {
       return item;
     } else {
-      throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('record not found');
     }
   }
 
@@ -83,7 +83,7 @@ export class ItemService {
     const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
     try {
       if (!file) {
-        throw new HttpException('file not included', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('file not included');
       }
       // Create a new Blob from the buffer
       const blob = new Blob([file.buffer], { type: file.mimetype });
@@ -96,14 +96,16 @@ export class ItemService {
 
       return { cid, url };
     } catch (error) {
-      throw new HttpException('Error uploading to Web3Storage:', error);
+      throw new InternalServerErrorException(
+        `Error uploading to Web3Storage: ${error?.message || error}`,
+      );
     }
   }
 
   public async create(
     file: Express.Multer.File,
     createItem: CreateItemDto,
-    user: JwtPayload,
+    user: UserPayload,
     project: any, //should have type Project
   ) {
     const LicenseCollection = this.eddiedb.collection('License');
@@ -145,7 +147,7 @@ export class ItemService {
   public async update(
     id: string,
     updateItem: UpdateItemDto,
-    user: JwtPayload,
+    user: UserPayload,
     project: any,
   ) {
     const oldItem = await this.findOne(id);
@@ -155,7 +157,7 @@ export class ItemService {
     // Check if user is the owner of the item they are trying to update
     const owner = await this.userService.getUserFromPublicKey(user.sub);
     if (oldItem.owner.id !== owner.id) {
-      throw new UnauthorizedException('Unathorized request to resource');
+      throw new UnauthorizedException('Unauthorized request to resource');
     }
 
     let licenseReference;
@@ -185,25 +187,22 @@ export class ItemService {
     return this.findOne(id);
   }
 
-  public async remove(id: string, user: JwtPayload) {
+  public async remove(id: string, user: UserPayload) {
     // Check if user is the owner of the item they are trying to delete
     const owner = await this.userService.getUserFromPublicKey(user.sub);
     const oldItem = await this.findOne(id);
     if (oldItem.owner.id !== owner.id) {
-      throw new UnauthorizedException('Unathorized request to resource');
+      throw new UnauthorizedException('Unauthorized request to resource');
     }
     try {
       await this.itemCollection.record(id).call('del');
     } catch (error) {
       switch (error.code) {
         case 'not-found':
-          throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+          throw new NotFoundException('record not found');
         default:
           console.log(error);
-          throw new HttpException(
-            'record could not be deleted',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
+          throw new InternalServerErrorException('record could not be deleted');
       }
       // throw new HttpException('record not found', HttpStatus.NOT_FOUND);
     }

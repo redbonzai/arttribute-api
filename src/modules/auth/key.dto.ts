@@ -11,10 +11,5 @@ export class KeyDto {
 
   @IsNotEmpty()
   @IsString()
-  prefix: string;
-
-  @IsNotEmpty()
-  @IsString()
   value: string;
 }
-

@@ -1,8 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateRequest, UpdateRequest } from './request.dto';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { PolybaseService } from '~/shared/polybase';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { CreateRequest, UpdateRequest } from './request.dto';
 
 @Injectable()
 export class RequestService {
@@ -27,7 +32,7 @@ export class RequestService {
       if (item) {
         return { id: item.id, type: 'item', owner: item.owner.id };
       } else {
-        throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('record not found');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionsCollection
@@ -40,13 +45,10 @@ export class RequestService {
           owner: collection.owner.id,
         };
       } else {
-        throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('record not found');
       }
     } else {
-      throw new HttpException(
-        `reference ${type} does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException(`reference ${type} does not exist`);
     }
   }
 
@@ -57,10 +59,7 @@ export class RequestService {
     );
     //check if sender is not the owner of the reference
     if (requestReference.owner === senderId) {
-      throw new HttpException(
-        'You cannot request your own item',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('You cannot request your own item');
     }
 
     const receiverId = requestReference.owner;
@@ -111,10 +110,10 @@ export class RequestService {
     const current_time = new Date().toISOString();
     const request = await this.requestCollection.record(requestId).get();
     if (!request) {
-      throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('record not found');
     }
     if (request.data.receiver.id !== userId) {
-      throw new HttpException('Unauthorized action', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException('Unauthorized action');
     }
 
     const updatedRequest = await this.requestCollection
@@ -123,4 +122,3 @@ export class RequestService {
     return updatedRequest;
   }
 }
-

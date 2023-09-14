@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { JwtPayload } from 'jsonwebtoken';
 
 export const User = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
@@ -6,3 +7,7 @@ export const User = createParamDecorator(
     return request.user;
   },
 );
+
+export type UserPayload = JwtPayload & {
+  wallet_address: string;
+};
