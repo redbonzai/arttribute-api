@@ -1,15 +1,14 @@
 import {
-  Controller,
-  Post,
   Body,
+  Controller,
   Param,
-  UseGuards,
   Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ProjectService } from './project.service';
+import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateProject, UpdateProject } from './project.dto';
-import { JwtAuthGuard, User } from '../auth';
-import { JwtPayload } from 'jsonwebtoken';
+import { ProjectService } from './project.service';
 
 @Controller({ version: '1', path: 'projects' })
 export class ProjectController {
@@ -19,7 +18,7 @@ export class ProjectController {
   @Post()
   async createProject(
     @Body() projectDto: CreateProject,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
   ) {
     return this.projectService.createProject(projectDto, user.sub);
   }
@@ -29,7 +28,7 @@ export class ProjectController {
   async updateProject(
     @Body() updateProjectDto: UpdateProject,
     @Param('id') projectId: string,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
   ) {
     return this.projectService.updateProject(
       updateProjectDto,
@@ -38,4 +37,3 @@ export class ProjectController {
     );
   }
 }
-

@@ -1,9 +1,12 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateProject, UpdateProject } from './project.dto';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { PolybaseService } from '~/shared/polybase';
-import { find } from 'lodash';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { CreateProject, UpdateProject } from './project.dto';
 
 @Injectable()
 export class ProjectService {
@@ -45,7 +48,7 @@ export class ProjectService {
     if (project) {
       return project;
     } else {
-      throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('record not found');
     }
   }
 
@@ -57,7 +60,7 @@ export class ProjectService {
   ) {
     const currentProject = await this.findOne(projectId);
     if (currentProject.owner.id !== userId) {
-      throw new HttpException('Unauthorized action', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException('Unauthorized action');
     }
     const updatedProject = await this.projectCollection
       .record(projectId)
@@ -69,4 +72,3 @@ export class ProjectService {
     return updatedProject.data;
   }
 }
-

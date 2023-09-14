@@ -1,15 +1,15 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { CreateCollection, CollectionResponse, Item } from './collection.dto';
 import { PolybaseService } from '~/shared/polybase';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { UserPayload } from '../auth';
 import { LicenseModel } from '../license/license.dto';
-import { JwtPayload } from 'jsonwebtoken';
+import { CollectionResponse, CreateCollection, Item } from './collection.dto';
 
 @Injectable()
 export class CollectionService {
@@ -27,7 +27,7 @@ export class CollectionService {
 
   async createCollection(
     createCollectionDto: CreateCollection,
-    user: JwtPayload,
+    user: UserPayload,
     project: any,
   ) {
     const id = generateUniqueId();
@@ -84,7 +84,7 @@ export class CollectionService {
   async changeVisibility(
     collectionId: string,
     isPublic: boolean,
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     const curr = await this.getCollection(collectionId);
 
@@ -104,7 +104,7 @@ export class CollectionService {
   async addItemToCollection(
     collectionId: string,
     itemId: string,
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     const collection = await this.getCollection(collectionId);
 
@@ -144,7 +144,7 @@ export class CollectionService {
   async removeItemFromCollection(
     collectionId: string,
     itemId: string,
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     const collection = await this.getCollection(collectionId);
 
@@ -178,7 +178,7 @@ export class CollectionService {
     return collections;
   }
 
-  async deleteCollection(collectionId: string, user: JwtPayload) {
+  async deleteCollection(collectionId: string, user: UserPayload) {
     const collection = await this.getCollection(collectionId);
 
     if (collection.owner.id !== user.sub) {
@@ -188,4 +188,3 @@ export class CollectionService {
     await this.collection.record(collectionId).call('del');
   }
 }
-

@@ -1,10 +1,15 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreatePayment } from './payment.dto';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { PolybaseService } from '~/shared/polybase';
-import { JwtPayload } from 'jsonwebtoken';
 import { ethers } from 'ethers';
+import { PolybaseService } from '~/shared/polybase';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { UserPayload } from '../auth';
+import { CreatePayment } from './payment.dto';
 
 @Injectable()
 export class PaymentService {
@@ -51,7 +56,7 @@ export class PaymentService {
           price: item.price,
         };
       } else {
-        throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('record not found');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionsCollection
@@ -72,13 +77,10 @@ export class PaymentService {
           price: collection.price,
         };
       } else {
-        throw new HttpException('record not found', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('record not found');
       }
     } else {
-      throw new HttpException(
-        `reference ${type} does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException(`reference ${type} does not exist`);
     }
   }
 
@@ -89,13 +91,13 @@ export class PaymentService {
     if (network) {
       return { id: network.id };
     } else {
-      throw new HttpException('Network not supported', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Network not supported');
     }
   }
 
   async createPayment(
     paymentDto: CreatePayment,
-    user: JwtPayload,
+    user: UserPayload,
     project: any,
   ) {
     const id = generateUniqueId();
@@ -108,17 +110,13 @@ export class PaymentService {
 
     //check if sender is not the owner of the reference
     if (reference.owner.id === user.sub) {
-      throw new HttpException(
-        'You cannot pay for your own item',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('You cannot pay for your own item');
     }
 
     //check if payment amount is less than the required price
     if (paymentDto.amount < reference.price.amount) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Payment amount is less than the required  price',
-        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -142,20 +140,18 @@ export class PaymentService {
 
     const tx = await provider.getTransaction(paymentDto.transactionHash);
     if (tx && tx.to.toLowerCase() != reference.owner.address.toLowerCase()) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Invalid transaction hash: receiver does not match',
-        HttpStatus.BAD_REQUEST,
       );
     }
     if (ethers.formatEther(tx.value) < paymentDto.amount.toString()) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Invalid transaction hash: amount does not match',
-        HttpStatus.BAD_REQUEST,
       );
     }
     const txresult = await tx.wait();
     if (txresult.status != 1) {
-      throw new HttpException('Transaction failed', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('Transaction failed');
     }
     //create payment once transaction is confirmed
     try {
@@ -176,12 +172,14 @@ export class PaymentService {
       ]);
       return payment;
     } catch (error) {
-      throw new HttpException('Error creating payment', error);
+      throw new InternalServerErrorException(
+        `Error creating payment: ${error?.message || error}`,
+      );
     }
   }
 
   //get user payments received
-  async getUserPaymentsReceived(user: JwtPayload) {
+  async getUserPaymentsReceived(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('receiver', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
@@ -190,7 +188,7 @@ export class PaymentService {
   }
 
   //get user payments sent
-  async getUserPaymentsSent(user: JwtPayload) {
+  async getUserPaymentsSent(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('sender', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
@@ -207,4 +205,3 @@ export class PaymentService {
     return payments;
   }
 }
-

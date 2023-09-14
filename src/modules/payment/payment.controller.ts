@@ -1,28 +1,19 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { PaymentService } from './payment.service';
-import { CreatePayment } from './payment.dto';
-import { JwtPayload } from 'jsonwebtoken';
-import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators/project.decorator';
+import { CreatePayment } from './payment.dto';
+import { PaymentService } from './payment.service';
 
 @Controller({ version: '1', path: 'payments' })
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, APIKeyAuthGuard)
   @Post()
   async createPayment(
     @Body() paymentDto: CreatePayment,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
     @Project() project: any,
   ) {
     return this.paymentService.createPayment(paymentDto, user, project);
@@ -31,12 +22,12 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @Get('/received')
-  async getUserPaymentsReceived(@User() user: JwtPayload) {
+  async getUserPaymentsReceived(@User() user: UserPayload) {
     return this.paymentService.getUserPaymentsReceived(user);
   }
 
   @Get('/sent')
-  async getUserPaymentsSent(@User() user: JwtPayload) {
+  async getUserPaymentsSent(@User() user: UserPayload) {
     return this.paymentService.getUserPaymentsSent(user);
   }
 
@@ -45,4 +36,3 @@ export class PaymentController {
     return this.paymentService.getPaymentsBySource(source);
   }
 }
-

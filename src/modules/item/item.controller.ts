@@ -1,30 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Query,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
+  Get,
   HttpCode,
+  MaxFileSizeValidator,
+  Param,
+  ParseFilePipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
   UseGuards,
-  Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ItemService } from './item.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { CreateItemDto, UpdateItemDto } from './item.dto';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
-import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
-import { JwtPayload } from 'jsonwebtoken';
+import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators/project.decorator';
-import { PolybaseProject } from '../project/project.dto';
+import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { ItemService } from './item.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
@@ -33,9 +27,11 @@ export class ItemController {
 
   @Get()
   findAll(
-    @Req() req,
     @Query()
-    query: { source?: string; tags?: string },
+    query: {
+      source?: string;
+      tags?: string;
+    },
   ) {
     return this.itemService.findAll(query);
   }
@@ -52,7 +48,7 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
@@ -64,27 +60,27 @@ export class ItemController {
     )
     file: Express.Multer.File,
     @Body() createItem: CreateItemDto,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
     @Project() project: any,
   ) {
     return this.itemService.create(file, createItem, user, project);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   update(
     @Param('id') id: string,
     @Body() updateItem: UpdateItemDto,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
     @Project() project: any,
   ) {
     return this.itemService.update(id, updateItem, user, project);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @User() user: JwtPayload) {
+  remove(@Param('id') id: string, @User() user: UserPayload) {
     return this.itemService.remove(id, user);
   }
 }

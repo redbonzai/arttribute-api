@@ -1,14 +1,20 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PolybaseService } from '~/shared/polybase';
-import { v4 } from 'uuid';
-import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
-import { JwtPayload } from 'jsonwebtoken';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { first, map } from 'lodash';
-import { CollectionService } from '../collection/collection.service';
-import { getSignerData } from '~/shared/util/getSignerData';
-import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
 import { ethers } from 'ethers';
+import { first, map } from 'lodash';
+import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
+import { PolybaseService } from '~/shared/polybase';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { getSignerData } from '~/shared/util/getSignerData';
+import { UserPayload } from '../auth';
+import { CollectionService } from '../collection/collection.service';
+import { ItemService } from '../item/item.service';
+import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 
 interface RequestOptions {
   full?: boolean;
@@ -19,19 +25,20 @@ export class CertificateService {
   private eddieDb: Polybase;
   private certificateCollection: Collection<PolybaseCertificate>;
   itemCollection: Collection<any>;
-  collectionsCollection: Collection<any>;
+  collectionCollection: Collection<any>;
   requestCollection: Collection<any>;
   paymentCollection: Collection<any>;
 
   constructor(
     private polybaseService: PolybaseService,
     private collectionService: CollectionService,
+    private itemService: ItemService,
   ) {
     this.db = polybaseService.app('bashy');
     this.eddieDb = polybaseService.app('eddie');
     this.certificateCollection = this.db.collection('Certificate');
     this.itemCollection = this.db.collection('Item');
-    this.collectionsCollection = this.db.collection('Collection');
+    this.collectionCollection = this.db.collection('Collection');
     this.requestCollection = this.db.collection('PermissionRequest');
     this.paymentCollection = this.db.collection('Payment');
   }
@@ -63,13 +70,10 @@ export class CertificateService {
           price: item.price,
         };
       } else {
-        throw new HttpException(
-          'reference record not found',
-          HttpStatus.NOT_FOUND,
-        );
+        throw new NotFoundException('reference record not found');
       }
     } else if (type === 'collection') {
-      const { data: collection } = await this.collectionsCollection
+      const { data: collection } = await this.collectionCollection
         .record(id)
         .get();
       if (collection) {
@@ -88,23 +92,17 @@ export class CertificateService {
           price: collection.price,
         };
       } else {
-        throw new HttpException(
-          'reference record not found',
-          HttpStatus.NOT_FOUND,
-        );
+        throw new NotFoundException('reference record not found');
       }
     } else {
-      throw new HttpException(
-        `reference ${type} does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException(`reference ${type} does not exist`);
     }
   }
 
   //For items and collections that needs permission request, check status of permission request
   public async checkPermissionRequestStatus(
     props: { referenceId: string; referenceType: string },
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     const { referenceId, referenceType } = props;
     const { data: permissionRequest } = await this.requestCollection
@@ -117,10 +115,7 @@ export class CertificateService {
     if (permissionRequest) {
       return permissionRequest;
     } else {
-      throw new HttpException(
-        'Permission request not found',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException('Permission request not found');
     }
   }
 
@@ -128,7 +123,7 @@ export class CertificateService {
   public async findPaymentReference(
     referenceId: string,
     referenceType: string,
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     const { data: payment } = await this.paymentCollection
       .where('reference.id', '==', referenceId)
@@ -137,13 +132,13 @@ export class CertificateService {
       .get();
 
     if (payment.length === 0) {
-      throw new HttpException('Payment not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Payment not found');
     }
   }
 
   public async createCertificate(props: {
     certificate: CreateCertificate;
-    user: JwtPayload;
+    user: UserPayload;
   }) {
     const { certificate, user } = props;
     const certificateReference = await this.findReference(
@@ -153,9 +148,8 @@ export class CertificateService {
 
     //if requestor is owner
     if (certificateReference.owner === user.sub) {
-      throw new HttpException(
+      throw new UnauthorizedException(
         'You are the owner of this item/collection. You cannot create a certificate for your own item/collection',
-        HttpStatus.UNAUTHORIZED,
       );
     }
 
@@ -168,10 +162,7 @@ export class CertificateService {
         user,
       );
       if (!permissionRequest.accepted) {
-        throw new HttpException(
-          'Permission request not accepted',
-          HttpStatus.UNAUTHORIZED,
-        );
+        throw new UnauthorizedException('Permission request not accepted');
       }
     }
 
@@ -184,7 +175,7 @@ export class CertificateService {
       console.log('payment amount:', certificateReference.price.amount);
     }
 
-    const certificateId = v4();
+    const certificateId = generateUniqueId();
     const slug =
       certificateReference.title.toLowerCase() +
       '-by' +
@@ -211,7 +202,7 @@ export class CertificateService {
     props: { certificateId: string },
     message: string,
     signature: string,
-    user: JwtPayload,
+    user: UserPayload,
   ) {
     try {
       const { certificateId } = props;
@@ -253,10 +244,7 @@ export class CertificateService {
         .call('updateMintedStatus', [true, tokenId]);
       return { updatedCert, mintedCertificate, recoveredAddress };
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -272,9 +260,7 @@ export class CertificateService {
       switch (certificate.reference.type) {
         case 'item': {
           // Instead of accessing the database, this should interact with the api
-          const itemCollection = this.itemCollection;
-
-          const itemRecord = await itemCollection
+          const itemRecord = await this.itemCollection
             .record(certificate.reference.id)
             .get();
 
@@ -283,9 +269,7 @@ export class CertificateService {
         }
         case 'collection': {
           // Instead of accessing the database, this should interact with the api
-          const collectionCollection = this.collectionsCollection;
-
-          const collectionRecord = await collectionCollection
+          const collectionRecord = await this.collectionCollection
             .record(certificate.reference.id)
             .get();
 
@@ -334,7 +318,7 @@ export class CertificateService {
       .then(({ data }) => first(data));
 
     if (!certificateRecord) {
-      throw new HttpException('Certificate not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Certificate not found');
     }
     //get item/collection data
     const certificate = certificateRecord;
@@ -345,7 +329,7 @@ export class CertificateService {
         .get();
       reference = itemRecord;
     } else if (certificate.reference.type === 'collection') {
-      const { data: collectionRecord } = await this.collectionsCollection
+      const { data: collectionRecord } = await this.collectionCollection
         .record(certificate.reference.id)
         .get();
       reference = collectionRecord;
@@ -378,8 +362,9 @@ export class CertificateService {
     const res = { collections: [], items: [] };
 
     // collections
-    const collectionRefs =
-      await this.collectionService.getCollectionsForUser(userId);
+    const collectionRefs = await this.collectionService.getCollectionsForUser(
+      userId,
+    );
 
     if (collectionRefs.length !== 0) {
       const collectionIds = map(collectionRefs, 'id');
@@ -392,11 +377,13 @@ export class CertificateService {
             .get();
 
         if (certificatesForCollection.length !== 0) {
-          map(certificatesForCollection, async (certificate) => {
-            res.collections.push(
-              await this.resolveCertificate(certificate.toJSON(), options),
-            );
-          });
+          await Promise.all(
+            map(certificatesForCollection, async (certificate) => {
+              res.collections.push(
+                await this.resolveCertificate(certificate.toJSON(), options),
+              );
+            }),
+          );
         }
       }
     }
@@ -405,8 +392,8 @@ export class CertificateService {
     const { data: itemRefs } = await this.eddieDb
       .collection('Item')
       .where('owner', '==', this.eddieDb.collection('User').record(userId))
-      .get()
-      .then(({ data }) => ({ data }));
+      .get();
+    //   .then(({ data }) => ({ data }));
 
     if (itemRefs.length !== 0) {
       const itemIds = map(
@@ -421,11 +408,13 @@ export class CertificateService {
           .get();
 
         if (certificatesForItem.length !== 0) {
-          map(certificatesForItem, async (certificate) => {
-            res.items.push(
-              await this.resolveCertificate(certificate.toJSON(), options),
-            );
-          });
+          await Promise.all(
+            map(certificatesForItem, async (certificate) => {
+              res.items.push(
+                await this.resolveCertificate(certificate.toJSON(), options),
+              );
+            }),
+          );
         }
       }
     }
@@ -439,4 +428,3 @@ export class CertificateService {
     return this.certificateCollection.record(id).call('del');
   }
 }
-
