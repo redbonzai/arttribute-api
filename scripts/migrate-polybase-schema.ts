@@ -2,14 +2,14 @@ import { config } from 'dotenv';
 config();
 
 import { ethPersonalSign } from '@polybase/eth';
-import { PolybaseService } from '~/shared/polybase';
+import { PolybaseApp, PolybaseService } from '~/shared/polybase';
 
 import { first, map, toPairs, values } from 'lodash';
 import * as collections from '~/dbcollections';
 
 const polybaseService = new PolybaseService();
 
-const db = polybaseService.app('arttribute-test');
+const db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
 
 db.signer((data) => {
   return {
