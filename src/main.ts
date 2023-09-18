@@ -42,8 +42,8 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('Arttribute')
+    .setDescription('The Arttribute API documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -54,7 +54,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, options);
 
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('api-docs', app, document, {
+    customCss: '.swagger-ui .topbar { display: none }',
+  });
 
   const port = process.env.PORT || 5000;
 
