@@ -362,9 +362,8 @@ export class CertificateService {
     const res = { collections: [], items: [] };
 
     // collections
-    const collectionRefs = await this.collectionService.getCollectionsForUser(
-      userId,
-    );
+    const collectionRefs =
+      await this.collectionService.getCollectionsForUser(userId);
 
     if (collectionRefs.length !== 0) {
       const collectionIds = map(collectionRefs, 'id');

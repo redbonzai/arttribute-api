@@ -8,13 +8,29 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { CreateCertificate } from './certificate.dto';
+import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('certificates')
 @Controller({ version: '1', path: 'certificates' })
 export class CertificateController {
   constructor(private certificateService: CertificateService) {}
 
+  @ApiOperation({ summary: 'Create a new certificate' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created a new certificate',
+    type: PolybaseCertificate,
+  })
+  @ApiResponse({ status: 404, description: 'No reference found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post()
   public async createCertificate(
@@ -27,16 +43,31 @@ export class CertificateController {
     });
   }
 
+  @ApiOperation({ summary: 'Get all certificates' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all certificates',
+    type: [PolybaseCertificate],
+  })
   @Get()
   public async getCertificates(@Query('full') full: boolean) {
     return this.certificateService.getCertificates({}, { full });
   }
 
+  @ApiOperation({ summary: 'Get a certificate by slug' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved a certificate by slug',
+    type: PolybaseCertificate,
+  })
+  @ApiResponse({ status: 404, description: 'No certificate found' })
   @Get(':slug')
   public async getCertificateBySlug(@Param('slug') slug: string) {
     return this.certificateService.getCertificateBySlug({ slug });
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mint a certificate' })
   @UseGuards(JwtAuthGuard)
   @Post('/mint/:certificateId')
   public async mintCertificate(
@@ -53,8 +84,16 @@ export class CertificateController {
     );
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a certificate' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved a certificate',
+    type: PolybaseCertificate,
+  })
   @UseGuards(APIKeyAuthGuard)
   @Get('/:certificateId')
+  // TODO: a bit of an issue
   public async getCertificate(
     @Param('certificateId') certificateId: string,
     @Query('full') full: boolean,
@@ -62,6 +101,17 @@ export class CertificateController {
     return this.certificateService.getCertificate({ certificateId }, { full });
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Discover certificates for a user',
+    description:
+      'Search for certificates that have been generated for your work. This includes certificates for items and collections.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved certificates for a user',
+    type: [PolybaseCertificate],
+  })
   @UseGuards(JwtAuthGuard)
   @Get('/:userId/references') // TODO: This route structure?
   public async discoverUserCertificates(
