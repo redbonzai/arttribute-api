@@ -9,11 +9,19 @@ import {
 import { AuthService } from './auth.service';
 import { User, UserPayload } from './decorators';
 import { JwtAuthGuard } from './guards';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller({ version: '1', path: 'auth' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Verify signature' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully verified signature',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @Post()
   async verifySignature(
     @Body('address') address: string,
@@ -33,6 +41,12 @@ export class AuthController {
     return { token: token };
   }
 
+  @ApiOperation({ summary: 'Create API key' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully created API key',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard)
   @Post('api-key/:id')
   async createAPIKey(

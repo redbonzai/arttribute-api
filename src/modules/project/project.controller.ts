@@ -9,11 +9,18 @@ import {
 import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateProject, UpdateProject } from './project.dto';
 import { ProjectService } from './project.service';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('projects')
 @Controller({ version: '1', path: 'projects' })
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  @ApiOperation({ summary: 'Create a new project' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created a new project',
+  })
   @UseGuards(JwtAuthGuard)
   @Post()
   async createProject(
@@ -23,6 +30,13 @@ export class ProjectController {
     return this.projectService.createProject(projectDto, user.sub);
   }
 
+  @ApiOperation({ summary: 'Update a project' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully updated a project',
+  })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async updateProject(
