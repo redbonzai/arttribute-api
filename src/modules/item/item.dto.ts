@@ -48,7 +48,7 @@ export class ItemDto {
 
   @IsNotEmpty()
   @IsString()
-  price_currency: Price;
+  price_currency: string;
 
   @IsString({ each: true })
   @IsArray()

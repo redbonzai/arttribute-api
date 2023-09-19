@@ -35,9 +35,9 @@ export class ItemService {
 
   public async findAll(query: any) {
     const reference = await this.itemCollection;
-    let builder: Query<any>;
+    let builder: any = reference;
     if (query.source) {
-      builder = (builder || reference)
+      builder = builder
         .where('source', '>=', query.source)
         .where('source', '<', `${query.source}~`);
     }
@@ -50,7 +50,6 @@ export class ItemService {
       const items = map(raw_items, function (item) {
         let match = true;
         for (const i in tags) {
-          console.log('Tag: ' + i);
           if (!item.data.tags.includes(tags[i])) {
             match = false;
           }
@@ -126,7 +125,7 @@ export class ItemService {
       createItem.tags,
       createItem.author,
       this.db.collection('User').record(user.sub),
-      project.name,
+      createItem.source,
       this.db.collection('Project').record(project.id),
       createItem.license.join(),
       createItem.license.map((license_id) =>

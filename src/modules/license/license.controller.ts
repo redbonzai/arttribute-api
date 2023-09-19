@@ -6,10 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { LicenseService } from './license.service';
 import { LicenseModel } from './license.dto';
+import { JwtAuthGuard } from '../auth';
 
+@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'licenses' })
 export class LicenseController {
   constructor(private readonly licenseService: LicenseService) {}

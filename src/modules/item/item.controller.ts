@@ -48,8 +48,8 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
-  //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  // @UseGuards(JwtAuthGuard)
+  // @UseGuards(APIKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(

@@ -39,12 +39,13 @@ export class LicenseService {
       createLicense.name,
       createLicense.description,
       createLicense.symbol,
+      createLicense.family,
     ]);
     return createdLicense;
   }
 
   update() {
-    return `This action updates an license`;
+    return `This action updates a license`;
   }
 
   public async remove(id: string) {
