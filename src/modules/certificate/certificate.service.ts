@@ -22,7 +22,6 @@ interface RequestOptions {
 @Injectable()
 export class CertificateService {
   private db: Polybase;
-  private eddieDb: Polybase;
   private certificateCollection: Collection<PolybaseCertificate>;
   itemCollection: Collection<any>;
   collectionCollection: Collection<any>;
@@ -34,8 +33,7 @@ export class CertificateService {
     private collectionService: CollectionService,
     private itemService: ItemService,
   ) {
-    this.db = polybaseService.app('bashy');
-    this.eddieDb = polybaseService.app('eddie');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.certificateCollection = this.db.collection('Certificate');
     this.itemCollection = this.db.collection('Item');
     this.collectionCollection = this.db.collection('Collection');
@@ -389,9 +387,9 @@ export class CertificateService {
     }
 
     // items
-    const { data: itemRefs } = await this.eddieDb
+    const { data: itemRefs } = await this.db
       .collection('Item')
-      .where('owner', '==', this.eddieDb.collection('User').record(userId))
+      .where('owner', '==', this.db.collection('User').record(userId))
       .get();
     //   .then(({ data }) => ({ data }));
 

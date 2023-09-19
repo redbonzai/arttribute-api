@@ -17,7 +17,6 @@ import { CreateItemDto, UpdateItemDto } from './item.dto';
 @Injectable()
 export class ItemService {
   private readonly db: Polybase;
-  private readonly eddiedb: Polybase;
   private readonly itemCollection: Collection<any>;
 
   constructor(
@@ -25,8 +24,7 @@ export class ItemService {
     private uploadService: UploadService,
     private userService: UserService,
   ) {
-    this.db = polybaseService.app('bashy');
-    this.eddiedb = polybaseService.app('eddie');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.itemCollection = this.db.collection('Item');
   }
 
@@ -108,7 +106,7 @@ export class ItemService {
     user: UserPayload,
     project: any, //should have type Project
   ) {
-    const LicenseCollection = this.eddiedb.collection('License');
+    const LicenseCollection = this.db.collection('License');
 
     const id = generateUniqueId();
     const current_time = new Date().toISOString();
@@ -152,7 +150,7 @@ export class ItemService {
   ) {
     const oldItem = await this.findOne(id);
     const current_time = new Date().toISOString();
-    const LicenseCollection = this.eddiedb.collection('License');
+    const LicenseCollection = this.db.collection('License');
 
     // Check if user is the owner of the item they are trying to update
     const owner = await this.userService.getUserFromPublicKey(user.sub);

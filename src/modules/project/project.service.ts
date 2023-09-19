@@ -14,7 +14,7 @@ export class ProjectService {
   projectCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.projectCollection = this.db.collection('Project');
   }
 

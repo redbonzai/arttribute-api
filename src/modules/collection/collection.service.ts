@@ -14,14 +14,10 @@ import { CollectionResponse, CreateCollection, Item } from './collection.dto';
 @Injectable()
 export class CollectionService {
   db: Polybase;
-  eddieDb: Polybase;
-  bashyDb: Polybase;
   collection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy'); //changed from Khalifa to bashy for testing
-    this.eddieDb = polybaseService.app('eddie');
-    this.bashyDb = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable'); //changed from Khalifa to bashy for testing
     this.collection = this.db.collection('Collection');
   }
 
@@ -38,11 +34,11 @@ export class CollectionService {
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      this.bashyDb.collection('User').record(user.sub),
-      this.bashyDb.collection('Project').record(project.id),
+      this.db.collection('User').record(user.sub),
+      this.db.collection('Project').record(project.id),
       createCollectionDto.license.join(''),
       createCollectionDto.license.map((license_id) =>
-        this.eddieDb.collection('License').record(license_id),
+        this.db.collection('License').record(license_id),
       ),
       createCollectionDto.price?.amount || 0,
       createCollectionDto.price?.currency || 'none',
@@ -115,7 +111,7 @@ export class CollectionService {
     }
 
     // TODO: integrate with actual Item module
-    const record = await this.bashyDb.collection('Item').record(itemId).get();
+    const record = await this.db.collection('Item').record(itemId).get();
     const item = record.data;
 
     if (!record || !item) throw new NotFoundException('Item not found');
