@@ -9,8 +9,14 @@ import {
 import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateProject, UpdateProject } from './project.dto';
 import { ProjectService } from './project.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @ApiTags('projects')
 @Controller({ version: '1', path: 'projects' })
 export class ProjectController {

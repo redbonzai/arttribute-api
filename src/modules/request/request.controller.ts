@@ -2,8 +2,14 @@ import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateRequest } from './request.dto';
 import { RequestService } from './request.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @ApiTags('requests')
 @Controller({ version: '1', path: 'requests' })
 export class RequestController {
