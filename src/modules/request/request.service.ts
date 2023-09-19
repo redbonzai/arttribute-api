@@ -17,7 +17,7 @@ export class RequestService {
   collectionsCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.requestCollection = this.db.collection('PermissionRequest');
     this.itemCollection = this.db.collection('Item');
     this.collectionsCollection = this.db.collection('Collection');
