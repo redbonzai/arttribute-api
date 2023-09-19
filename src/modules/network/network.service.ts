@@ -29,4 +29,3 @@ export class NetworkService {
     return network;
   }
 }
-
