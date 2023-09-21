@@ -9,6 +9,11 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { inspect } from 'util';
+import {
+  SwaggerModule,
+  DocumentBuilder,
+  type SwaggerDocumentOptions,
+} from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -35,6 +40,23 @@ async function bootstrap() {
   );
   //cors
   app.enableCors();
+
+  const config = new DocumentBuilder()
+    .setTitle('Arttribute')
+    .setDescription('The Arttribute API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const options: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
+  const document = SwaggerModule.createDocument(app, config, options);
+
+  SwaggerModule.setup('api-docs', app, document, {
+    customCss: '.swagger-ui .topbar { display: none }',
+  });
 
   const port = process.env.PORT || 5000;
 

@@ -19,7 +19,7 @@ class User {
   created: string;
 }
 
-// temporary classes for license and Item
+// temporary classes for Item
 export class Item {
   @IsString()
   @IsNotEmpty()
@@ -36,41 +36,74 @@ export class Item {
 }
 
 class Price {
+  /**
+   * @example 100
+   */
   @IsNotEmpty()
   @IsNumber()
   amount!: number;
 
+  /**
+   * @example "USD"
+   */
   @IsNotEmpty()
   @IsString()
   currency!: string;
 }
 
 export class CreateCollection {
+  /**
+   * Title of the collection
+   * @example "Picasso Collection"
+   */
   @IsString()
   @IsNotEmpty()
   title: string;
 
+  /**
+   * Description of the collection
+   * @example "A collection of Picasso's paintings"
+   */
   @IsString()
   @IsNotEmpty()
   description: string;
 
+  /**
+   * Whether the collection is public or not
+   * @example true
+   */
   @IsBoolean()
   @IsNotEmpty()
   isPublic: boolean;
 
+  /**
+   * Tags for the collection
+   * @example ["AI", "ML", "Data Science"]
+   */
   @IsArray()
   @IsNotEmpty()
   @IsString({ each: true })
   tags: string[];
 
+  /**
+   * Price for the collection
+   */
   @IsObject()
   price!: Price;
 
+  /**
+   * Licenses for the collection
+   * @example ["ATR", "NCM"]
+   */
   @IsArray()
   @IsNotEmpty()
   @IsString({ each: true })
   license: string[];
 
+  /**
+   * Whether the collection needs request or not
+   * @example true
+   */
   @IsNotEmpty()
   @IsBooleanString()
   needsRequest: boolean;
@@ -84,4 +117,3 @@ export class CollectionResponse extends CreateCollection {
   createdAt: string;
   updatedAt: string;
 }
-

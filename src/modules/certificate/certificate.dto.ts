@@ -7,10 +7,16 @@ import {
 } from 'class-validator';
 
 class Reference {
+  /**
+   * @example "item"
+   */
   @IsDefined()
   @IsIn(['item', 'collection'])
   type!: 'item' | 'collection';
 
+  /**
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
   @IsDefined()
   @IsUUID()
   id!: string;
@@ -33,9 +39,16 @@ export class PolybaseCertificate {
 }
 
 class Certificate {
+  /**
+   * Description of the certificate
+   * @example "New Certificate"
+   */
   @IsString()
   description?: string;
 
+  /**
+   * Reference to the item or collection
+   */
   @IsDefined()
   reference: Reference;
 }
@@ -43,4 +56,3 @@ class Certificate {
 export class CreateCertificate extends Certificate {}
 
 export class UpdateCertificate extends Certificate {}
-
