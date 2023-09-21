@@ -8,6 +8,8 @@ collection Project {
   created: string;
   updated: string;
   
+  @index(id, owner);
+  
   constructor (id: string, owner: User,name: string, url?: string,  created: string, updated: string) {
     this.id = id;
     this.owner = owner;
@@ -24,3 +26,4 @@ collection Project {
   }
 }
 `;
+

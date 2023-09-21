@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -10,6 +12,7 @@ import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { UserPayload } from '../auth';
 import { CreatePayment } from './payment.dto';
+import { first } from 'lodash';
 
 @Injectable()
 export class PaymentService {
@@ -120,15 +123,15 @@ export class PaymentService {
       );
     }
 
-    // const paymentExists = await this.paymentCollection
-    //   .where('transactionHash', '==', paymentDto.transactionHash)
-    //   .get();
-    // if (paymentExists) {
-    //   throw new HttpException(
-    //     'Payment with the transaction hash already exists',
-    //     HttpStatus.BAD_REQUEST,
-    //   );
-    // }
+    const paymentExists = await this.paymentCollection
+      .where('transactionHash', '==', paymentDto.transactionHash)
+      .get();
+    if (first(paymentExists.data)?.data) {
+      throw new HttpException(
+        'Payment with the transaction hash already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     //To do: get endpoint from network
     const network = await this.findNetwork(paymentDto.network.chainId);
@@ -156,7 +159,7 @@ export class PaymentService {
     //create payment once transaction is confirmed
     try {
       const payment = await this.paymentCollection.create([
-        //paymentDto.transactionHash,
+        paymentDto.transactionHash, // could also be uuid
         paymentDto.reference.type,
         paymentDto.reference.id,
         paymentDto.transactionHash,
@@ -165,7 +168,7 @@ export class PaymentService {
         paymentDto.amount,
         paymentDto.currency,
         paymentType,
-        //project.name,
+        project.name,
         this.db.collection('Project').record(project.id),
         this.db.collection('Network').record(network.id),
         createdAt,
@@ -204,4 +207,15 @@ export class PaymentService {
       .get();
     return payments;
   }
+
+  //Delete payment
+  async deletePayment(id: string) {
+    const payment = await this.paymentCollection.record(id).get();
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+    await this.paymentCollection.record(id).call('del');
+    return payment;
+  }
 }
+

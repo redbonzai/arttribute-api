@@ -62,6 +62,13 @@ export class ItemDto {
 
 export class CreateItemDto extends ItemDto {}
 
+export class ItemResponse extends CreateItemDto {
+  id: string;
+  license: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class UpdateItemDto extends ItemDto {
   @IsString()
   title: string;
@@ -84,3 +91,4 @@ export class UpdateItemDto extends ItemDto {
   @IsBooleanString()
   needsRequest: boolean;
 }
+

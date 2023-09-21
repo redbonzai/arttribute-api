@@ -17,8 +17,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators/project.decorator';
-import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 //@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
@@ -48,6 +54,12 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
+  @ApiOperation({ summary: 'Create a new collection' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created a new collection',
+    type: ItemResponse,
+  })
   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Post()

@@ -13,21 +13,22 @@ export class RequestController {
     @Body() requestDto: CreateRequest,
     @User() user: UserPayload,
   ) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.createRequest(requestDto, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('/received')
   async getReceivedRequests(@User() user: UserPayload) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.getReceivedRequests(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('/sent')
   async getSentRequests(@User() user: UserPayload) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.getSentRequests(userId);
   }
 }
+
