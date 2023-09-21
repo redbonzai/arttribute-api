@@ -16,9 +16,8 @@ import {
   Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ItemService } from './item.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { JwtAuthGuard, User } from '../auth';
