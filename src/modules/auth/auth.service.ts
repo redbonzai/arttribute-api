@@ -68,6 +68,7 @@ export class AuthService {
     const key = await this.apikeyCollection.create([
       generateUniqueId(),
       this.db.collection('Project').record(projectId),
+      'prefix',
       this.hash(apiKey),
       createdAt,
     ]);
@@ -115,3 +116,4 @@ export class AuthService {
     return new sha256().update(val).digest('base64');
   }
 }
+

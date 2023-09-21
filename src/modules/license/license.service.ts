@@ -39,6 +39,7 @@ export class LicenseService {
       createLicense.name,
       createLicense.description,
       createLicense.symbol,
+      createLicense.family,
     ]);
     return createdLicense;
   }
@@ -60,3 +61,4 @@ export class LicenseService {
     }
   }
 }
+

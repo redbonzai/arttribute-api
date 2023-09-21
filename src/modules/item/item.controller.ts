@@ -20,7 +20,7 @@ import { Project } from '../auth/decorators/project.decorator';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
 
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'items' })
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
@@ -48,7 +48,7 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
-  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
@@ -59,14 +59,15 @@ export class ItemController {
       }),
     )
     file: Express.Multer.File,
-    @Body() createItem: CreateItemDto,
+    @Body('data') createItem: string,
     @User() user: UserPayload,
     @Project() project: any,
   ) {
-    return this.itemService.create(file, createItem, user, project);
+    const data = JSON.parse(createItem);
+    return this.itemService.create(file, data, user, project);
   }
 
-  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
@@ -84,3 +85,4 @@ export class ItemController {
     return this.itemService.remove(id, user);
   }
 }
+

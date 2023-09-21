@@ -15,4 +15,8 @@ export class LicenseModel {
 
   @IsString()
   symbol: string;
+
+  @IsString()
+  family: string;
 }
+
