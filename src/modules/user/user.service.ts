@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Polybase, Collection } from '@polybase/client';
+import { Collection, Polybase } from '@polybase/client';
 import { PolybaseService } from '~/shared/polybase';
 import { getSignerData } from '~/shared/util/getSignerData';
 
@@ -14,13 +13,19 @@ export class UserService {
     this.userCollection = this.db.collection('User');
   }
   async createUser(
-    publicKey,
+    message,
+    signature,
     address,
     name,
   ): Promise<{ message: string; user }> {
+    const { recoveredAddress, publicKey } = getSignerData(message, signature);
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      throw new UnauthorizedException('Signature does not match!');
+    }
     const existingUser = await this.userCollection
       .where('address', '==', address)
       .get();
+
     if (existingUser.data.length > 0) {
       return {
         message: 'This address is already registered to Arttribute',
@@ -34,7 +39,10 @@ export class UserService {
       name,
       new Date().toISOString(),
     ]);
-    return { message: 'User created successfully', user: createdUser.data };
+    return {
+      message: 'User created successfully',
+      user: createdUser.data,
+    };
   }
 
   public async getUserFromPublicKey(publicKey: string) {

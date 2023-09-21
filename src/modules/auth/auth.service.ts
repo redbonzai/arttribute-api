@@ -1,19 +1,18 @@
 import {
   HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Collection, Polybase } from '@polybase/client';
-import { JwtPayload } from 'jsonwebtoken';
 import { first } from 'lodash';
 import { sha256 } from 'sha.js';
 import { v4 as uuidv4 } from 'uuid';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { getSignerData } from '~/shared/util/getSignerData';
+import { UserPayload } from './decorators';
 
 @Injectable()
 export class AuthService {
@@ -37,8 +36,6 @@ export class AuthService {
       const { recoveredAddress, publicKey } = getSignerData(message, signature);
       if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
         throw new UnauthorizedException('Signature does not match!');
-        // const publicKey = ethPersonalSignRecoverPublicKey(signature, message);
-        // userService.getUser(publicKey)
       }
       const existingUser = await this.userCollection
         .where('address', '==', address)
@@ -46,7 +43,8 @@ export class AuthService {
       if (!first(existingUser.data)?.data) {
         throw new UnauthorizedException('User does not exist!');
       }
-      const token = this.jwtService.sign({ address, publicKey });
+      const payload: UserPayload = { sub: publicKey, wallet_address: address };
+      const token = this.jwtService.sign(payload);
       return { token, publicKey };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -61,7 +59,7 @@ export class AuthService {
     //check if user is owner of project
     const currentProject = await this.findProject(projectId);
     if (currentProject.owner.id !== userId) {
-      throw new HttpException('Unauthorized action', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException('Unauthorized action');
     }
     const createdAt = new Date().toISOString();
 
@@ -69,13 +67,11 @@ export class AuthService {
 
     const key = await this.apikeyCollection.create([
       generateUniqueId(),
-      this.db.collection('User').record(userId),
       this.db.collection('Project').record(projectId),
-      ' ',
       this.hash(apiKey),
       createdAt,
     ]);
-    return { data: key.data, apikey: apiKey };
+    return { data: key.data, apiKey };
   }
 
   async getProjectForAPIKey(hashedApiKey: string) {
@@ -94,11 +90,6 @@ export class AuthService {
       throw new NotFoundException('Project Not found');
     }
     return project;
-
-    // Get project form API Key
-
-    // const { data: project } = await this.projectCollection.where().get();
-    return undefined;
   }
 
   private generate() {
@@ -116,7 +107,7 @@ export class AuthService {
     if (project) {
       return project;
     } else {
-      throw new HttpException('project record not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('project record not found');
     }
   }
 

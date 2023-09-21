@@ -1,25 +1,35 @@
 import {
-  Controller,
-  Post,
   Body,
+  Controller,
+  Delete,
   Get,
   Param,
   Patch,
-  Delete,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
 import { CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
-import { CreateCollection } from './collection.dto';
 
-@Controller('collections')
+@Controller({ version: '1', path: 'collections' })
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(APIKeyAuthGuard)
   @Post()
-  async createCollection(@Body() createCollectionDto: CreateCollection) {
-    return await this.collectionService.createCollection(createCollectionDto);
+  async createCollection(
+    @Body() createCollectionDto: CreateCollection,
+    @User() user: UserPayload,
+    @Project() project: any,
+  ) {
+    return await this.collectionService.createCollection(
+      createCollectionDto,
+      user,
+      project,
+    );
   }
 
   @Get()
@@ -41,38 +51,49 @@ export class CollectionController {
   async changeVisibility(
     @Param('id') collectionId: string,
     @Body('isPublic') isPublic: boolean,
+    @User() user: UserPayload,
   ) {
     return await this.collectionService.changeVisibility(
       collectionId,
       isPublic,
+      user,
     );
   }
 
   // TODO: check on the API structure for adding and removing items from a collection
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
     @Body('itemId') itemId: string,
+    @User() user: UserPayload,
   ) {
     return await this.collectionService.addItemToCollection(
       collectionId,
       itemId,
+      user,
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id/items/:itemId')
   async removeItemFromCollection(
     @Param('id') collectionId: string,
     @Param('itemId') itemId: string,
+    @User() user: UserPayload,
   ) {
     return await this.collectionService.removeItemFromCollection(
       collectionId,
       itemId,
+      user,
     );
   }
 
   @Delete(':id')
-  async deleteCollection(@Param('id') collectionId: string) {
-    return await this.collectionService.deleteCollection(collectionId);
+  async deleteCollection(
+    @Param('id') collectionId: string,
+    @User() user: UserPayload,
+  ) {
+    return await this.collectionService.deleteCollection(collectionId, user);
   }
 }

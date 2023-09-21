@@ -1,51 +1,196 @@
-import { Injectable } from '@nestjs/common';
-import { CreatePayment } from './payment.dto';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
-import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { ethers } from 'ethers';
 import { PolybaseService } from '~/shared/polybase';
+import { generateUniqueId } from '~/shared/util/generateUniqueId';
+import { UserPayload } from '../auth';
+import { CreatePayment } from './payment.dto';
 
 @Injectable()
 export class PaymentService {
   db: Polybase;
-  collection: Collection<any>;
+  paymentCollection: Collection<any>;
+  itemCollection: Collection<any>;
+  collectionsCollection: Collection<any>;
+  networkCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
     this.db = polybaseService.app('bashy');
-    this.collection = this.db.collection('Payment');
+    this.paymentCollection = this.db.collection('Payment');
+    this.itemCollection = this.db.collection('Item');
+    this.collectionsCollection = this.db.collection('Collection');
+    this.networkCollection = this.db.collection('Network');
   }
 
-  async createPayment(paymentDto: CreatePayment) {
+  public async findReference(
+    id: string,
+    type: string,
+  ): Promise<{
+    id: string;
+    type: string;
+    owner: {
+      id: string;
+      address: string;
+    };
+    price: { amount: number; currency: string };
+  }> {
+    if (type === 'item') {
+      const { data: item } = await this.itemCollection.record(id).get();
+      if (item) {
+        const { data: owner } = await this.db
+          .collection('User')
+          .record(item.owner.id)
+          .get();
+        return {
+          id: item.id,
+          type: 'item',
+          owner: {
+            id: item.owner.id,
+            address: owner.address,
+          },
+          price: item.price,
+        };
+      } else {
+        throw new NotFoundException('record not found');
+      }
+    } else if (type === 'collection') {
+      const { data: collection } = await this.collectionsCollection
+        .record(id)
+        .get();
+      if (collection) {
+        const { data: owner } = await this.db
+          .collection('User')
+          .record(collection.owner.id)
+          .get();
+        return {
+          id: collection.id,
+          type: 'collection',
+          owner: {
+            id: collection.owner.id,
+            address: owner.address,
+          },
+          price: collection.price,
+        };
+      } else {
+        throw new NotFoundException('record not found');
+      }
+    } else {
+      throw new NotFoundException(`reference ${type} does not exist`);
+    }
+  }
+
+  public async findNetwork(chainId: string): Promise<{ id: string }> {
+    const { data: network } = await this.networkCollection
+      .record(chainId)
+      .get();
+    if (network) {
+      return { id: network.id };
+    } else {
+      throw new NotFoundException('Network not supported');
+    }
+  }
+
+  async createPayment(
+    paymentDto: CreatePayment,
+    user: UserPayload,
+    project: any,
+  ) {
     const id = generateUniqueId();
     const createdAt = new Date().toISOString();
+    const reference = await this.findReference(
+      paymentDto.reference.id,
+      paymentDto.reference.type,
+    );
+    const paymentType = reference.price.amount > 0 ? 'fee' : 'gift';
 
-    const payment = await this.collection.create([
-      id,
-      paymentDto.payedFor,
-      this.db.collection('User').record(paymentDto.sender.id),
-      this.db.collection('User').record(paymentDto.receiver.id),
-      paymentDto.amount,
-      paymentDto.currency,
-      paymentDto.type,
-      paymentDto.source,
-      this.db.collection('Network').record(paymentDto.network.id),
-      createdAt,
-    ]);
-    return payment;
+    //check if sender is not the owner of the reference
+    if (reference.owner.id === user.sub) {
+      throw new BadRequestException('You cannot pay for your own item');
+    }
+
+    //check if payment amount is less than the required price
+    if (paymentDto.amount < reference.price.amount) {
+      throw new BadRequestException(
+        'Payment amount is less than the required  price',
+      );
+    }
+
+    // const paymentExists = await this.paymentCollection
+    //   .where('transactionHash', '==', paymentDto.transactionHash)
+    //   .get();
+    // if (paymentExists) {
+    //   throw new HttpException(
+    //     'Payment with the transaction hash already exists',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
+
+    //To do: get endpoint from network
+    const network = await this.findNetwork(paymentDto.network.chainId);
+
+    //Confirm transaction on the blockchain
+    const provider = new ethers.JsonRpcProvider(
+      `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
+    );
+
+    const tx = await provider.getTransaction(paymentDto.transactionHash);
+    if (tx && tx.to.toLowerCase() != reference.owner.address.toLowerCase()) {
+      throw new BadRequestException(
+        'Invalid transaction hash: receiver does not match',
+      );
+    }
+    if (ethers.formatEther(tx.value) < paymentDto.amount.toString()) {
+      throw new BadRequestException(
+        'Invalid transaction hash: amount does not match',
+      );
+    }
+    const txresult = await tx.wait();
+    if (txresult.status != 1) {
+      throw new BadRequestException('Transaction failed');
+    }
+    //create payment once transaction is confirmed
+    try {
+      const payment = await this.paymentCollection.create([
+        //paymentDto.transactionHash,
+        paymentDto.reference.type,
+        paymentDto.reference.id,
+        paymentDto.transactionHash,
+        this.db.collection('User').record(user.sub),
+        this.db.collection('User').record(reference.owner.id),
+        paymentDto.amount,
+        paymentDto.currency,
+        paymentType,
+        //project.name,
+        this.db.collection('Project').record(project.id),
+        this.db.collection('Network').record(network.id),
+        createdAt,
+      ]);
+      return payment;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error creating payment: ${error?.message || error}`,
+      );
+    }
   }
 
   //get user payments received
-  async getUserPaymentsReceived(userId: string) {
-    const payments = await this.collection
-      .where('receiver', '==', this.db.collection('User').record(userId))
+  async getUserPaymentsReceived(user: UserPayload) {
+    const payments = await this.paymentCollection
+      .where('receiver', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
       .get();
     return payments;
   }
 
   //get user payments sent
-  async getUserPaymentsSent(userId: string) {
-    const payments = await this.collection
-      .where('sender', '==', this.db.collection('User').record(userId))
+  async getUserPaymentsSent(user: UserPayload) {
+    const payments = await this.paymentCollection
+      .where('sender', '==', this.db.collection('User').record(user.sub))
       .sort('created', 'desc')
       .get();
     return payments;
@@ -53,7 +198,7 @@ export class PaymentService {
 
   //get payments by source
   async getPaymentsBySource(source: string) {
-    const payments = await this.collection
+    const payments = await this.paymentCollection
       .where('source', '==', source)
       .sort('created', 'desc')
       .get();

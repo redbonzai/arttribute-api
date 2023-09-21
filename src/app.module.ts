@@ -9,19 +9,25 @@ import { LicenseModule } from './modules/license/license.module';
 import { UploadModule } from './shared/web3storage/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CollectionModule } from './modules/collection/collection.module';
 import { ProjectModule } from './modules/project/project.module';
+import { RequestModule } from './modules/request/request.module';
+import { NetworkModule } from './modules/network/network.module';
 
 @Module({
   imports: [
     AuthModule,
     PolybaseModule,
     CertificateModule,
+    CollectionModule,
     PaymentModule,
     ItemModule,
     LicenseModule,
     UploadModule,
     UserModule,
     ProjectModule,
+    RequestModule,
+    NetworkModule,
   ],
   controllers: [AppController],
   providers: [AppService],

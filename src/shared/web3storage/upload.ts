@@ -5,3 +5,4 @@ function makeStorageClient() {
 }
 
 export default makeStorageClient;
+

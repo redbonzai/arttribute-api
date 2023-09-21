@@ -3,25 +3,32 @@ import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
 import { CreatePayment } from './payment.dto';
 import { PaymentService } from './payment.service';
-import { CreatePayment } from './payment.dto';
 
-@Controller('payments')
+@Controller({ version: '1', path: 'payments' })
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, APIKeyAuthGuard)
   @Post()
-  async createPayment(@Body() paymentDto: CreatePayment) {
-    return this.paymentService.createPayment(paymentDto);
+  async createPayment(
+    @Body() paymentDto: CreatePayment,
+    @User() user: UserPayload,
+    @Project() project: any,
+  ) {
+    return this.paymentService.createPayment(paymentDto, user, project);
   }
 
-  @Get('/received/:userId')
-  async getUserPaymentsReceived(@Param('userId') userId: string) {
-    return this.paymentService.getUserPaymentsReceived(userId);
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  @Get('/received')
+  async getUserPaymentsReceived(@User() user: UserPayload) {
+    return this.paymentService.getUserPaymentsReceived(user);
   }
 
-  @Get('/sent/:userId')
-  async getUserPaymentsSent(@Param('userId') userId: string) {
-    return this.paymentService.getUserPaymentsSent(userId);
+  @Get('/sent')
+  async getUserPaymentsSent(@User() user: UserPayload) {
+    return this.paymentService.getUserPaymentsSent(user);
   }
 
   @Get('/:source')

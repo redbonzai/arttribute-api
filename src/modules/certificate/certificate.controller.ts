@@ -7,8 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtPayload } from 'jsonwebtoken';
-import { APIKeyAuthGuard, JwtAuthGuard, User } from '../auth';
+import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 import { Project, Auth } from '../auth/decorators';
@@ -21,11 +20,9 @@ export class CertificateController {
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
-    @User() user: JwtPayload,
+    @User() user: UserPayload,
   ) {
-    // By the time it's here, it's already been authorized
-    console.log(user);
-    return this.certificateService.createCertificate({
+    return await this.certificateService.createCertificate({
       certificate: body,
       user,
     });
@@ -67,5 +64,17 @@ export class CertificateController {
   ) {
     console.log({ user, project });
     return this.certificateService.getCertificate({ certificateId }, { full });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/:userId/references') // TODO: This route structure?
+  public async discoverUserCertificates(
+    @Param('userId') userId: string,
+    @Query('full') full: boolean,
+  ) {
+    return this.certificateService.discoverUserCertificates(
+      { userId },
+      { full },
+    );
   }
 }

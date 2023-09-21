@@ -6,9 +6,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { JwtPayload } from 'jsonwebtoken';
 import { AuthService } from './auth.service';
-import { User } from './decorators';
+import { User, UserPayload } from './decorators';
 import { JwtAuthGuard } from './guards';
 
 @Controller({ version: '1', path: 'auth' })
@@ -36,12 +35,15 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('api-key/:id')
-  async createAPIKey(@Param('id') projectId: string, @User() user: JwtPayload) {
-    const userId = user.publicKey;
+  async createAPIKey(
+    @Param('id') projectId: string,
+    @User() user: UserPayload,
+  ) {
+    const userId = user.sub;
     const keyData = await this.authService.createKey(userId, projectId);
     const createKeyResult = {
       message: 'Key created successfully',
-      apiKey: keyData.apikey,
+      apiKey: keyData.apiKey,
       note: 'Please save this key, it will not be shown again.',
     };
     return createKeyResult;
