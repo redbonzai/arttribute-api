@@ -33,8 +33,6 @@ async function bootstrap() {
       },
     }),
   );
-  //cors
-  app.enableCors();
 
   const port = process.env.PORT || 5000;
 

@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators/project.decorator';
+import { Project } from '../auth/decorators';
 import { CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
 

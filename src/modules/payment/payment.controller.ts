@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators/project.decorator';
+import { Project } from '../auth/decorators';
 import { CreatePayment } from './payment.dto';
 import { PaymentService } from './payment.service';
 
