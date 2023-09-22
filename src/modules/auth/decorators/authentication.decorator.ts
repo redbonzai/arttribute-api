@@ -1,17 +1,23 @@
 import { UseGuards } from '@nestjs/common';
 import { map, uniq } from 'lodash';
-import { AnyAuthGuard, ApiKeyAuthGuard, JwtAuthGuard } from '../guards';
+import {
+  AllAuthGuard,
+  AnyAuthGuard,
+  ApiKeyAuthGuard,
+  JwtAuthGuard,
+} from '../guards';
 
 const authScopes = ['api-key', 'jwt'] as const;
 export type AuthScope = (typeof authScopes)[number];
 
-const conditionalAuthScopes = ['any'] as const;
+const conditionalAuthScopes = ['any', 'all'] as const;
 export type ConditionalAuthScope = (typeof conditionalAuthScopes)[number];
 
 const AuthScopeMap: Record<AuthScope | ConditionalAuthScope, any> = {
   'api-key': ApiKeyAuthGuard,
   'jwt': JwtAuthGuard,
   'any': AnyAuthGuard,
+  'all': AllAuthGuard,
 };
 
 export function Authentication(scope: ConditionalAuthScope): MethodDecorator;

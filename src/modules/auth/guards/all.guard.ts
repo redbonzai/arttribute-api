@@ -1,16 +1,22 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { map, some } from 'lodash';
+import { every, map } from 'lodash';
 import { AuthService } from '../auth.service';
-import { AllAuthGuard } from './all.guard';
+import { ApiKeyAuthGuard } from './api-key.guard';
+import { JwtAuthGuard } from './jwt.guard';
 
 @Injectable()
-export class AnyAuthGuard extends AllAuthGuard {
+export class AllAuthGuard implements CanActivate {
+  protected guards: CanActivate[];
+
   constructor(
     protected reflector: Reflector,
     protected authService: AuthService,
   ) {
-    super(reflector, authService);
+    this.guards.push(
+      new JwtAuthGuard(reflector, authService),
+      new ApiKeyAuthGuard(reflector, authService),
+    );
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -18,7 +24,7 @@ export class AnyAuthGuard extends AllAuthGuard {
       map(this.guards, (guard) => guard.canActivate(context)),
     );
 
-    return some(guardsSettled, (result) => {
+    return every(guardsSettled, (result) => {
       if (result.status == 'fulfilled') {
         return result.value;
       }
