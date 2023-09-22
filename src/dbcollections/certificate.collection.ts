@@ -14,7 +14,7 @@ collection Certificate {
   minted: boolean;
   tokenDetails?:string;
 
-  @index(slug, reference.type, reference.id);
+  @index(slug, reference.type, reference.id, owner);
 
   constructor (id: string, owner: User, referenceType: string, referenceId: string, referenceOwner: string,  description: string, slug: string, created: string, minted: boolean) {
     this.id = id;
@@ -41,3 +41,4 @@ collection Certificate {
   
 }
 `;
+

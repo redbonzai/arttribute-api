@@ -207,6 +207,11 @@ export class CertificateService {
       const { data: certificate } = await this.certificateCollection
         .record(certificateId)
         .get();
+
+      //If ceertificate is already minted
+      if (certificate.minted) {
+        throw new UnauthorizedException('Certificate already minted');
+      }
       const contractAddress = '0x6A803B8F038554AF34AC73F1C099bd340dcC7026'; //old '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
       const tokenURI =
         'https://bafybeiekhfonwnc7uqot6t3wdu45ncip2bwfor35zizapzre6dijgrklkm.ipfs.w3s.link/cf555ba7-5a62-48ae-91a8-be3cc7a1b60e.jpg';
@@ -218,8 +223,7 @@ export class CertificateService {
         `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
       );
 
-      const privateKey =
-        '0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0';
+      const privateKey = process.env.MINT_KEY;
       const wallet = new ethers.Wallet(privateKey, provider);
 
       const contract = new ethers.Contract(
@@ -425,3 +429,4 @@ export class CertificateService {
     return this.certificateCollection.record(id).call('del');
   }
 }
+

@@ -36,6 +36,8 @@ export class PolybaseCertificate {
   @IsDefined()
   @ValidateNested()
   reference!: Reference;
+
+  minted?: boolean;
 }
 
 class Certificate {
@@ -56,3 +58,4 @@ class Certificate {
 export class CreateCertificate extends Certificate {}
 
 export class UpdateCertificate extends Certificate {}
+
