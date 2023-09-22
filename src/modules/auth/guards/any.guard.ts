@@ -1,6 +1,6 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { map, some } from 'lodash';
+import { find, map, some } from 'lodash';
 import { AuthService } from '../auth.service';
 import { AllAuthGuard } from './all.guard';
 
@@ -18,10 +18,19 @@ export class AnyAuthGuard extends AllAuthGuard {
       map(this.guards, (guard) => guard.canActivate(context)),
     );
 
-    return some(guardsSettled, (result) => {
+    const isValid = some(guardsSettled, (result) => {
       if (result.status == 'fulfilled') {
         return result.value;
       }
     });
+
+    if (isValid) {
+      return isValid;
+    }
+    throw (
+      find(guardsSettled, {
+        'status': 'rejected',
+      }) as PromiseRejectedResult
+    ).reason;
   }
 }

@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { every, map } from 'lodash';
+import { every, find, map } from 'lodash';
 import { AuthService } from '../auth.service';
 import { ApiKeyAuthGuard } from './api-key.guard';
 import { JwtAuthGuard } from './jwt.guard';
@@ -24,10 +24,19 @@ export class AllAuthGuard implements CanActivate {
       map(this.guards, (guard) => guard.canActivate(context)),
     );
 
-    return every(guardsSettled, (result) => {
+    const isValid = every(guardsSettled, (result) => {
       if (result.status == 'fulfilled') {
         return result.value;
       }
     });
+
+    if (isValid) {
+      return isValid;
+    }
+    throw (
+      find(guardsSettled, {
+        'status': 'rejected',
+      }) as PromiseRejectedResult
+    ).reason;
   }
 }
