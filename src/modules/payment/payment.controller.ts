@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
 import { CreatePayment } from './payment.dto';
 import { PaymentService } from './payment.service';
@@ -9,7 +9,7 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(JwtAuthGuard, APIKeyAuthGuard)
+  @UseGuards(JwtAuthGuard, ApiKeyAuthGuard)
   @Post()
   async createPayment(
     @Body() paymentDto: CreatePayment,

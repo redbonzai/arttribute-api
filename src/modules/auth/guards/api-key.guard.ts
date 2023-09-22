@@ -12,7 +12,7 @@ import { first, get, isObject } from 'lodash';
 import { AuthService } from '../auth.service';
 
 @Injectable()
-export class APIKeyAuthGuard implements CanActivate {
+export class ApiKeyAuthGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private authService: AuthService,

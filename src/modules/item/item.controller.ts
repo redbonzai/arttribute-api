@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
@@ -49,7 +49,7 @@ export class ItemController {
   }
 
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(
@@ -67,7 +67,7 @@ export class ItemController {
   }
 
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   update(
