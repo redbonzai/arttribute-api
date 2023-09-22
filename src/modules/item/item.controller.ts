@@ -59,7 +59,7 @@ export class ItemController {
       }),
     )
     file: Express.Multer.File,
-    @Body() createItem: CreateItemDto,
+    @Body() createItem: CreateItemDto, //TODO: Should currency input be limited in array?
     @User() user: UserPayload,
     @Project() project: any,
   ) {
