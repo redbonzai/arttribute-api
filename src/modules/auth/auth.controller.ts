@@ -9,7 +9,12 @@ import {
 import { AuthService } from './auth.service';
 import { User, UserPayload } from './decorators';
 import { JwtAuthGuard } from './guards';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('auth')
 @Controller({ version: '1', path: 'auth' })
@@ -41,6 +46,7 @@ export class AuthController {
     return { token: token };
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create API key' })
   @ApiResponse({
     status: 200,

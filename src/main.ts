@@ -38,14 +38,17 @@ async function bootstrap() {
       },
     }),
   );
-  //cors
-  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('Arttribute')
     .setDescription('The Arttribute API documentation')
     .setVersion('1.0')
     .addBearerAuth()
+    .addApiKey({
+      type: 'apiKey',
+      name: 'x-api-key',
+      in: 'header',
+    })
     .build();
 
   const options: SwaggerDocumentOptions = {
