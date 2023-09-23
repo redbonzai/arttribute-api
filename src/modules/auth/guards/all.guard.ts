@@ -7,7 +7,7 @@ import { JwtAuthGuard } from './jwt.guard';
 
 @Injectable()
 export class AllAuthGuard implements CanActivate {
-  protected guards: CanActivate[];
+  protected guards: CanActivate[] = [];
 
   constructor(
     protected reflector: Reflector,
