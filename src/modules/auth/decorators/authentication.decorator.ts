@@ -20,11 +20,11 @@ const AuthScopeMap: Record<AuthScope | ConditionalAuthScope, any> = {
   'all': AllAuthGuard,
 };
 
-export function Authentication(scope: ConditionalAuthScope): MethodDecorator;
-export function Authentication(...scopes: AuthScope[]): MethodDecorator;
+export function Authentication(scope: ConditionalAuthScope): any;
+export function Authentication(...scopes: AuthScope[]): any;
 export function Authentication(
   ...scopes: AuthScope[] | ConditionalAuthScope[]
-): MethodDecorator {
+): any {
   const uniqueScopes = uniq(scopes);
   return UseGuards(...map(uniqueScopes, (scope) => AuthScopeMap[scope]));
 }

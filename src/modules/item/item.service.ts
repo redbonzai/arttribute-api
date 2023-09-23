@@ -13,6 +13,7 @@ import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { UserPayload } from '../auth';
 import { UserService } from '../user/user.service';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { FileService } from '../file/file.service';
 
 @Injectable()
 export class ItemService {
@@ -22,6 +23,7 @@ export class ItemService {
   constructor(
     private polybaseService: PolybaseService,
     private uploadService: UploadService,
+    private fileService: FileService,
     private userService: UserService,
   ) {
     this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
@@ -37,14 +39,17 @@ export class ItemService {
     const reference = await this.itemCollection;
     let builder: any = reference;
     if (query.source) {
+      const source = query.source.toLowerCase();
       builder = builder
-        .where('source', '>=', query.source)
-        .where('source', '<', `${query.source}~`);
+        .where('source', '>=', source)
+        .where('source', '<', `${source}~`);
     }
 
     // if tags exist, filter results based on tags
     if (query.tags) {
-      const tags = query.tags.split(',');
+      const tags = query.tags.split(',').map((element) => {
+        return element.toLowerCase();
+      });
       const { data: raw_items } = await builder.get();
 
       const items = map(raw_items, function (item) {
@@ -74,33 +79,74 @@ export class ItemService {
     }
   }
 
-  async uploadToWeb3Storage(
-    file: Express.Multer.File,
-  ): Promise<{ cid: string; url: string }> {
-    const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
-    try {
-      if (!file) {
-        throw new NotFoundException('file not included');
-      }
-      // Create a new Blob from the buffer
-      const blob = new Blob([file.buffer], { type: file.mimetype });
+  // async uploadToWeb3Storage(
+  //   file: Express.Multer.File,
+  // ): Promise<{ cid: string; url: string }> {
+  //   const client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
+  //   try {
+  //     if (!file) {
+  //       throw new NotFoundException('file not included');
+  //     }
+  //     // Create a new Blob from the buffer
+  //     const blob = new Blob([file.buffer], { type: file.mimetype });
 
-      // Use the File object from web3.storage
-      const filelike = new File([blob], file.originalname);
+  //     // Use the File object from web3.storage
+  //     const filelike = new File([blob], file.originalname);
 
-      const cid = await client.put([filelike]);
-      const url = this.generateURLfromCID(cid, file.originalname);
+  //     const cid = await client.put([filelike]);
+  //     const url = this.generateURLfromCID(cid, file.originalname);
 
-      return { cid, url };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error uploading to Web3Storage: ${error?.message || error}`,
-      );
-    }
-  }
+  //     return { cid, url };
+  //   } catch (error) {
+  //     throw new InternalServerErrorException(
+  //       `Error uploading to Web3Storage: ${error?.message || error}`,
+  //     );
+  //   }
+  // }
+
+  // public async create(
+  //   file: Express.Multer.File,
+  //   createItem: CreateItemDto,
+  //   user: UserPayload,
+  //   project: any, //should have type Project
+  // ) {
+  //   const LicenseCollection = this.db.collection('License');
+
+  //   const id = generateUniqueId();
+  //   const current_time = new Date().toISOString();
+  //   const owner = await this.userService.getUserFromPublicKey(user.sub);
+  //   if (!owner) {
+  //     console.log('No owner');
+  //     throw new UnauthorizedException('Unauthorized');
+  //   }
+
+  //   const { cid, url } = await this.fileService(file);
+
+  //   const createdItem = await this.itemCollection.create([
+  //     id,
+  //     createItem.title,
+  //     createItem.description,
+  //     url,
+  //     createItem.tags,
+  //     createItem.author,
+  //     this.db.collection('User').record(user.sub),
+  //     createItem.source,
+  //     this.db.collection('Project').record(project.id),
+  //     createItem.license.join(),
+  //     createItem.license.map((license_id) =>
+  //       LicenseCollection.record(license_id),
+  //     ),
+  //     createItem.price_amount || 0,
+  //     createItem.price_currency || 'none',
+  //     createItem.needsRequest,
+  //     current_time,
+  //     current_time,
+  //   ]);
+
+  //   return createdItem;
+  // }
 
   public async create(
-    file: Express.Multer.File,
     createItem: CreateItemDto,
     user: UserPayload,
     project: any, //should have type Project
@@ -111,28 +157,31 @@ export class ItemService {
     const current_time = new Date().toISOString();
     const owner = await this.userService.getUserFromPublicKey(user.sub);
     if (!owner) {
-      console.log('No owner');
       throw new UnauthorizedException('Unauthorized');
     }
 
-    const { cid, url } = await this.uploadToWeb3Storage(file);
+    const { cid, url } = await this.fileService.uploadBase64File(
+      createItem.file,
+    );
 
     const createdItem = await this.itemCollection.create([
       id,
       createItem.title,
       createItem.description,
       url,
-      createItem.tags,
+      createItem.tags.map((element) => {
+        return element.toLowerCase();
+      }),
       createItem.author,
       this.db.collection('User').record(user.sub),
-      createItem.source,
+      createItem.source.toLowerCase(),
       this.db.collection('Project').record(project.id),
       createItem.license.join(),
       createItem.license.map((license_id) =>
         LicenseCollection.record(license_id),
       ),
-      createItem.price_amount || 0,
-      createItem.price_currency || 'none',
+      createItem.price.amount || 0,
+      createItem.price.currency || 'none',
       createItem.needsRequest,
       current_time,
       current_time,
@@ -203,10 +252,5 @@ export class ItemService {
       }
       // throw new HttpException('record not found', HttpStatus.NOT_FOUND);
     }
-  }
-
-  public generateURLfromCID(cid: string, fileName: string) {
-    const url = `https://${cid}.ipfs.w3s.link/${fileName}`;
-    return url;
   }
 }
