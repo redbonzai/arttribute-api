@@ -7,10 +7,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
-import { Project, Auth } from '../auth/decorators';
+import { Project, Authentication } from '../auth/decorators';
 
 @Controller({ version: '1', path: 'certificates' })
 export class CertificateController {
@@ -54,7 +54,7 @@ export class CertificateController {
     );
   }
 
-  @Auth('api-key')
+  @Authentication('api-key')
   @Get('/:certificateId')
   public async getCertificate(
     @Param('certificateId') certificateId: string,

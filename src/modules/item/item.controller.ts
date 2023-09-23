@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
@@ -36,7 +36,6 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
-  @UseGuards(APIKeyAuthGuard)
   @Get(':id')
   findOne(
     @Param('id') id: string,
@@ -54,8 +53,8 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @UseGuards(APIKeyAuthGuard)
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(
@@ -73,7 +72,7 @@ export class ItemController {
   }
 
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   update(
