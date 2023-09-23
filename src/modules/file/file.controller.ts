@@ -31,7 +31,9 @@ export class FileController {
   }
 
   @Post('verify')
-  verifyFile(@Body() base64String: { file: string }) {
+  verifyFile(
+    @Body() base64String: { file: { data: string; mimetype?: string } },
+  ) {
     return this.fileService.uploadBase64File(base64String.file);
   }
 }

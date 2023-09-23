@@ -17,14 +17,29 @@ export class FileService {
   }
 
   // This function takes in a base64 string, decodes it into a blob object and uploads it to web3storage then returns the url and cid
-  public async uploadBase64File(
-    base64String: string,
-  ): Promise<{ cid: string; url: string }> {
+  public async uploadBase64File(base64FileObject: {
+    data: string;
+    mimetype?: string;
+  }) /*: Promise<{ cid: string; url: string }>*/ {
     //Get the mimetype
-    const mimeType = this.getMimeTypeFromBase64(base64String);
+    let mimeType;
+    try {
+      mimeType = this.getMimeTypeFromBase64(base64FileObject.data);
+    } catch (err) {
+      mimeType = base64FileObject.mimetype;
+    } finally {
+      if (!mimeType) {
+        throw new BadRequestException(
+          'Invalid base-64 format : missing MIME type',
+        );
+      }
+    }
 
     // Remove the data URL prefix if it exists
-    const base64WithoutPrefix = base64String.replace(/^data:[^;]+;base64,/, '');
+    const base64WithoutPrefix = base64FileObject.data.replace(
+      /^data:[^;]+;base64,/,
+      '',
+    );
 
     if (this.isValidBase64(base64WithoutPrefix)) {
       // Convert the Base64 string to binary data
@@ -55,6 +70,8 @@ export class FileService {
           `Error uploading to Web3Storage: ${error?.message || error}`,
         );
       }
+    } else {
+      throw new BadRequestException('Invalid base-64 string');
     }
   }
 
@@ -78,16 +95,20 @@ export class FileService {
   }
 
   public isValidBase64(str: string): boolean {
-    // Attempt to decode the string using the built-in atob function
-    const decodedString = atob(str);
+    try {
+      // Attempt to decode the string using the built-in atob function
+      const decodedString = atob(str);
 
-    // Re-encode the decoded string to Base64
-    const reencodedString = btoa(decodedString);
+      // Re-encode the decoded string to Base64
+      const reencodedString = btoa(decodedString);
 
-    // Check if the re-encoded string matches the original string
-    if (reencodedString === str) {
-      return true;
-    } else {
+      // Check if the re-encoded string matches the original string
+      if (reencodedString === str) {
+        return true;
+      } else {
+        throw new BadRequestException('Invalid base-64 string');
+      }
+    } catch (err) {
       throw new BadRequestException('Invalid base-64 string');
     }
   }

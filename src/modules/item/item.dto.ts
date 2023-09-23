@@ -24,6 +24,15 @@ class Price {
   currency!: string;
 }
 
+class FileData {
+  @IsNotEmpty()
+  @IsString()
+  data: string;
+
+  @IsString()
+  mimetype: string;
+}
+
 export class ItemDto {
   @IsNotEmpty()
   @IsString()
@@ -62,9 +71,11 @@ export class ItemDto {
 }
 
 export class CreateItemDto extends ItemDto {
-  @IsString()
+  @IsObject()
   @IsNotEmpty()
-  file: string;
+  @ValidateNested()
+  @Type(() => FileData)
+  file: FileData;
 }
 
 export class UpdateItemDto extends ItemDto {
@@ -82,6 +93,8 @@ export class UpdateItemDto extends ItemDto {
   @IsString()
   source: string;
   @IsObject()
+  @ValidateNested()
+  @Type(() => Price)
   price: Price;
   @IsString({ each: true })
   @IsArray()

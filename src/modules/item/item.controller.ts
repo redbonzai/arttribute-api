@@ -84,19 +84,20 @@ export class ItemController {
     @User() user: UserPayload,
     @Project() project: any,
   ) {
-    user = await this.userService.populateUser(user, project);
+    user = user || (await this.userService.populateUser(user, project));
     return this.itemService.create(createItem, user, project);
   }
   //   @UseGuards(JwtAuthGuard)
   @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateItem: UpdateItemDto,
     @User() user: UserPayload,
     @Project() project: any,
   ) {
+    user = user || (await this.userService.populateUser(user, project));
     return this.itemService.update(id, updateItem, user, project);
   }
 
