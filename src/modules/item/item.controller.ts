@@ -36,8 +36,14 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
+  @UseGuards(APIKeyAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(
+    @Param('id') id: string,
+    @User() user: UserPayload,
+    @Project() project: any,
+  ) {
+    return { 'user': user, 'project': project };
     return this.itemService.findOne(id);
   }
 
