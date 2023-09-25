@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 import { Project, Authentication } from '../auth/decorators';
