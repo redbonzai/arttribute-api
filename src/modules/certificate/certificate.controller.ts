@@ -7,9 +7,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
+import { Project, Authentication } from '../auth/decorators';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -91,13 +92,16 @@ export class CertificateController {
     description: 'Successfully retrieved a certificate',
     type: PolybaseCertificate,
   })
-  @UseGuards(APIKeyAuthGuard)
+  @Authentication('api-key')
   @Get('/:certificateId')
   // TODO: a bit of an issue
   public async getCertificate(
     @Param('certificateId') certificateId: string,
     @Query('full') full: boolean,
+    @User() user: UserPayload,
+    @Project() project: any,
   ) {
+    console.log({ user, project });
     return this.certificateService.getCertificate({ certificateId }, { full });
   }
 

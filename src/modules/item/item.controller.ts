@@ -15,8 +15,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators/project.decorator';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
 import {
@@ -83,7 +83,7 @@ export class ItemController {
   @ApiResponse({ status: 401, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'File not found' })
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -114,7 +114,7 @@ export class ItemController {
   @ApiResponse({ status: 404, description: 'Item not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
   //   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   update(

@@ -8,8 +8,8 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators/project.decorator';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators';
 import { CollectionResponse, CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
 import {
@@ -32,7 +32,7 @@ export class CollectionController {
     type: CollectionResponse,
   })
   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,

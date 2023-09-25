@@ -94,6 +94,10 @@ export class AuthService {
     return project;
   }
 
+  validateToken(token: string) {
+    return this.jwtService.verify<UserPayload>(token);
+  }
+
   private generate() {
     // UUID to hex
     const buffer = Buffer.alloc(16);
