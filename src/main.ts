@@ -57,7 +57,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, options);
 
-  SwaggerModule.setup('api-docs', app, document, {
+  SwaggerModule.setup('docs', app, document, {
     customCss: '.swagger-ui .topbar { display: none }',
   });
 
