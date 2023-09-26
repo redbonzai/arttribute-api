@@ -118,7 +118,13 @@ export class RequestService {
 
     const updatedRequest = await this.requestCollection
       .record(requestId)
-      .call('update', [updateDto.accepted, true, current_time]);
+      .call('update', [
+        updateDto.accepted,
+        true,
+        updateDto.receiverNote || '',
+        current_time,
+      ]);
     return updatedRequest;
   }
 }
+

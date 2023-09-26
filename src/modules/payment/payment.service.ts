@@ -59,7 +59,7 @@ export class PaymentService {
           price: item.price,
         };
       } else {
-        throw new NotFoundException('record not found');
+        throw new NotFoundException('Reference item does not exist');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionsCollection
@@ -80,7 +80,7 @@ export class PaymentService {
           price: collection.price,
         };
       } else {
-        throw new NotFoundException('record not found');
+        throw new NotFoundException('Reference collection does not exist');
       }
     } else {
       throw new NotFoundException(`reference ${type} does not exist`);
@@ -94,7 +94,7 @@ export class PaymentService {
     if (network) {
       return { id: network.id };
     } else {
-      throw new NotFoundException('Network not supported');
+      throw new BadRequestException('Unsupported network specified');
     }
   }
 
@@ -113,7 +113,9 @@ export class PaymentService {
 
     //check if sender is not the owner of the reference
     if (reference.owner.id === user.sub) {
-      throw new BadRequestException('You cannot pay for your own item');
+      throw new BadRequestException(
+        'You are the owner of this item/collection. You cannot make a payment for your own item/collection',
+      );
     }
 
     //check if payment amount is less than the required price

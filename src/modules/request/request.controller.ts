@@ -1,6 +1,14 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { CreateRequest } from './request.dto';
+import { CreateRequest, UpdateRequest } from './request.dto';
 import { RequestService } from './request.service';
 
 @Controller({ version: '1', path: 'requests' })
@@ -29,6 +37,17 @@ export class RequestController {
   async getSentRequests(@User() user: UserPayload) {
     const userId = user.sub;
     return this.requestService.getSentRequests(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async updateRequestStatus(
+    @Body() updateDto: UpdateRequest,
+    @User() user: UserPayload,
+    @Param('id') id: string,
+  ) {
+    const userId = user.sub;
+    return this.requestService.updateRequestStatus(updateDto, id, userId);
   }
 }
 

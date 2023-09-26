@@ -68,7 +68,7 @@ export class CertificateService {
           price: item.price,
         };
       } else {
-        throw new NotFoundException('reference record not found');
+        throw new NotFoundException('Reference item does not exist');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionCollection
@@ -90,7 +90,7 @@ export class CertificateService {
           price: collection.price,
         };
       } else {
-        throw new NotFoundException('reference record not found');
+        throw new NotFoundException('Reference collection does not exist');
       }
     } else {
       throw new NotFoundException(`reference ${type} does not exist`);
@@ -113,7 +113,9 @@ export class CertificateService {
     if (permissionRequest) {
       return permissionRequest;
     } else {
-      throw new NotFoundException('Permission request not found');
+      throw new NotFoundException(
+        'Permission request not found: This item/collection requires permission request',
+      );
     }
   }
 
@@ -130,7 +132,9 @@ export class CertificateService {
       .get();
 
     if (payment.length === 0) {
-      throw new NotFoundException('Payment not found');
+      throw new NotFoundException(
+        'Payment not found: This item/collection requires payment',
+      );
     }
   }
 

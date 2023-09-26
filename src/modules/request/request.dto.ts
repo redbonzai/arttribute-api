@@ -35,9 +35,5 @@ export class UpdateRequest {
 
   @IsString()
   receiverNote: string;
-
-  @IsNotEmpty()
-  @IsString()
-  senderNote: string;
 }
 
