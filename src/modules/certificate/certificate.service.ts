@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -108,7 +109,14 @@ export class CertificateService {
       .where('reference.type', '==', referenceType)
       .where('sender', '==', this.db.collection('User').record(user.sub))
       .get()
-      .then(({ data }) => first(data));
+      .then((result) => {
+        if (result.data.length === 0) {
+          throw new NotFoundException(
+            'Permission request not found: This item/collection requires permission request',
+          );
+        }
+        return first(result.data);
+      });
 
     if (permissionRequest) {
       return permissionRequest;
@@ -129,13 +137,15 @@ export class CertificateService {
       .where('reference.id', '==', referenceId)
       .where('reference.type', '==', referenceType)
       .where('sender', '==', this.db.collection('User').record(user.sub))
-      .get();
-
-    if (payment.length === 0) {
-      throw new NotFoundException(
-        'Payment not found: This item/collection requires payment',
-      );
-    }
+      .get()
+      .then((result) => {
+        if (result.data.length === 0) {
+          throw new NotFoundException(
+            'Payment not found: This item/collection requires payment',
+          );
+        }
+        return first(result.data);
+      });
   }
 
   public async createCertificate(props: {
@@ -164,7 +174,7 @@ export class CertificateService {
         user,
       );
       if (!permissionRequest.accepted) {
-        throw new UnauthorizedException('Permission request not accepted');
+        throw new BadRequestException('Permission request not accepted');
       }
     }
 
@@ -185,7 +195,7 @@ export class CertificateService {
       '-' +
       certificateReference.license +
       '-' +
-      certificateId;
+      user.wallet_address.toLowerCase();
     return await this.certificateCollection.create([
       certificateId,
       this.db.collection('User').record(user.sub),
@@ -321,7 +331,12 @@ export class CertificateService {
     const { data: certificateRecord } = await this.certificateCollection
       .where('slug', '==', slug)
       .get()
-      .then(({ data }) => first(data));
+      .then((result) => {
+        if (result.data.length === 0) {
+          throw new NotFoundException('Certificate not found');
+        }
+        return first(result.data);
+      });
 
     if (!certificateRecord) {
       throw new NotFoundException('Certificate not found');

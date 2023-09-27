@@ -75,7 +75,7 @@ export class RequestService {
       requestDto.reference.id,
       this.db.collection('User').record(senderId),
       this.db.collection('User').record(receiverId),
-      requestDto.senderNote,
+      requestDto.senderNote || '',
       accepted,
       closed,
       current_time,
@@ -88,7 +88,6 @@ export class RequestService {
   async getReceivedRequests(userId: string) {
     const requests = await this.requestCollection
       .where('receiver', '==', this.db.collection('User').record(userId))
-      .sort('created', 'desc')
       .get();
     return requests;
   }
@@ -96,7 +95,6 @@ export class RequestService {
   async getSentRequests(userId: string) {
     const requests = await this.requestCollection
       .where('sender', '==', this.db.collection('User').record(userId))
-      .sort('created', 'desc')
       .get();
     return requests;
   }
@@ -113,18 +111,36 @@ export class RequestService {
       throw new NotFoundException('record not found');
     }
     if (request.data.receiver.id !== userId) {
-      throw new UnauthorizedException('Unauthorized action');
+      throw new UnauthorizedException('Unauthorized action: You are not owner');
+    }
+
+    if (request.data.closed) {
+      throw new BadRequestException('request already closed');
+    }
+
+    if (updateDto.accepted && updateDto.receiverNote) {
+      throw new BadRequestException('request acceptance should be unequivocal');
     }
 
     const updatedRequest = await this.requestCollection
       .record(requestId)
-      .call('update', [
+      .call('updateRequestStatus', [
         updateDto.accepted,
         true,
-        updateDto.receiverNote || '',
         current_time,
+        updateDto.receiverNote || '',
       ]);
     return updatedRequest;
+  }
+
+  //Delete request
+  async deleteRequest(id: string) {
+    const payment = await this.requestCollection.record(id).get();
+    if (!payment) {
+      throw new NotFoundException('Request not found');
+    }
+    await this.requestCollection.record(id).call('del');
+    return payment;
   }
 }
 

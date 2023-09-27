@@ -187,7 +187,6 @@ export class PaymentService {
   async getUserPaymentsReceived(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('receiver', '==', this.db.collection('User').record(user.sub))
-      .sort('created', 'desc')
       .get();
     return payments;
   }
@@ -196,7 +195,6 @@ export class PaymentService {
   async getUserPaymentsSent(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('sender', '==', this.db.collection('User').record(user.sub))
-      .sort('created', 'desc')
       .get();
     return payments;
   }
@@ -205,7 +203,6 @@ export class PaymentService {
   async getPaymentsBySource(source: string) {
     const payments = await this.paymentCollection
       .where('source', '==', source)
-      .sort('created', 'desc')
       .get();
     return payments;
   }

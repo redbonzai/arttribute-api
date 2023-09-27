@@ -14,8 +14,10 @@ collection PermissionRequest{
   closed: boolean;
   created: string;
   updated: string;
-  
-  @index(reference.type, reference.id, sender, receiver);
+
+  @index(sender);
+  @index(receiver);
+  @index(reference.type, reference.id, sender);
 
   constructor(id: string, referenceType: string, referenceId: string, sender: User, receiver: User, senderNote?: string, accepted: string, closed: string, created: string, updated: string){
     this.id = id;
@@ -32,11 +34,15 @@ collection PermissionRequest{
     this.updated = updated;
   }
   
-  updateRequestStatus( accepted: boolean, closed: boolean, receiverNote?: string, updated:string) {
+  updateRequestStatus( accepted: boolean, closed: boolean, updated:string, receiverNote?: string) {
     this.accepted = accepted;
     this.closed = closed;
     this.receiverNote = receiverNote;
     this.updated = updated;
+  }
+
+  del () {
+    selfdestruct();
   }
 }
 `;

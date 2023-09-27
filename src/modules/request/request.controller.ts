@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -48,6 +49,12 @@ export class RequestController {
   ) {
     const userId = user.sub;
     return this.requestService.updateRequestStatus(updateDto, id, userId);
+  }
+
+  //Delete Request
+  @Delete(':id')
+  async deletePayment(@Param('id') id: string) {
+    return this.requestService.deleteRequest(id);
   }
 }
 

@@ -17,7 +17,11 @@ collection Payment{
   network: Network;
   created: string;
 
-  @index(reference.type, reference.id, transactionHash, sender, receiver, project);
+  @index(sender);
+  @index(receiver);
+  @index(project);
+  @index(reference.type, reference.id, sender);
+
 
   constructor(id: string, referenceType: string, referenceId: string, transactionHash:string, sender: User, receiver: User, amount:number, currency:string, type:string,  source?: string, project?: Project, network: Network, created: string){
     this.id = id;
