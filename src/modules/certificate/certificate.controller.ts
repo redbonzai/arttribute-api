@@ -11,8 +11,10 @@ import { User, UserPayload } from '../auth';
 import { Project, Authentication } from '../auth/decorators';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
+import { Project, Authentication } from '../auth/decorators';
 import {
   ApiBearerAuth,
+  ApiHeader,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -92,6 +94,11 @@ export class CertificateController {
     description: 'Successfully retrieved a certificate',
     type: PolybaseCertificate,
   })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'The API key for the project',
+    required: true,
+  })
   @Authentication('all')
   @Get('/:certificateId')
   // TODO: a bit of an issue
@@ -128,4 +135,3 @@ export class CertificateController {
     );
   }
 }
-

@@ -6,14 +6,14 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project, Authentication } from '../auth/decorators';
+import { Authentication, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators/project.decorator';
 import { CollectionResponse, CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
 import {
   ApiBearerAuth,
+  ApiHeader,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -26,6 +26,11 @@ export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
   @ApiOperation({ summary: 'Create a new collection' })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'API key',
+    required: true,
+  })
   @ApiResponse({
     status: 201,
     description: 'Successfully created a new collection',
@@ -162,4 +167,3 @@ export class CollectionController {
     return await this.collectionService.deleteCollection(collectionId, user);
   }
 }
-
