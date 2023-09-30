@@ -62,7 +62,7 @@ export class ItemDto {
 
   @IsString({ each: true })
   @IsArray()
-  @IsIn(['ATR', 'NCM', 'NDR'], { each: true })
+  @IsIn(['ATR', 'NCM', 'NDR', 'SHA'], { each: true })
   license: string[];
 
   @IsNotEmpty()
@@ -76,13 +76,6 @@ export class CreateItemDto extends ItemDto {
   @ValidateNested()
   @Type(() => FileData)
   file: FileData;
-}
-
-export class ItemResponse extends CreateItemDto {
-  id: string;
-  license: any;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export class UpdateItemDto extends ItemDto {

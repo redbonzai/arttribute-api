@@ -8,8 +8,6 @@ collection User {
   name: string;
   created: string;
 
-  @index(id);
-  
   // 'constructor' is called when a new record is
   // created, make sure to assign a value to 'this.id'
   constructor (id: string, publicKey: string, address: string, name: string, created:string) {

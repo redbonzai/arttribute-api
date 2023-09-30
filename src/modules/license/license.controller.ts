@@ -10,9 +10,10 @@ import {
 } from '@nestjs/common';
 import { LicenseService } from './license.service';
 import { LicenseModel } from './license.dto';
-import { JwtAuthGuard } from '../auth';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth';
 
+@UseGuards(JwtAuthGuard)
 @UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'licenses' })
 export class LicenseController {

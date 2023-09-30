@@ -6,16 +6,19 @@ import {
   HttpCode,
   MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiKeyAuthGuard, User, UserPayload } from '../auth';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Authentication, Project } from '../auth/decorators';
-import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
+import { CreateItemDto, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserService } from '../user/user.service';
 
 @Authentication('any')
@@ -74,12 +77,7 @@ export class ItemController {
   // }
   /************** -------- Not in use anymore ---------**************/
 
-  @ApiOperation({ summary: 'Create a new collection' })
-  @ApiResponse({
-    status: 201,
-    description: 'Successfully created a new collection',
-    type: ItemResponse,
-  })
+  // @Authentication('all')
   @Post()
   async create(
     @Body() createItem: CreateItemDto, //TODO: Should currency input be limited in array?
@@ -89,7 +87,8 @@ export class ItemController {
     user = user || (await this.userService.populateUser(user, project));
     return this.itemService.create(createItem, user, project);
   }
-
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
   async update(
