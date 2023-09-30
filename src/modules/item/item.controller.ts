@@ -4,22 +4,11 @@ import {
   Delete,
   Get,
   HttpCode,
-  MaxFileSizeValidator,
   Param,
-  ParseFilePipe,
   Patch,
   Post,
   Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Authentication, Project } from '../auth/decorators';
-import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
-import { ItemService } from './item.service';
-import { UserService } from '../user/user.service';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -29,6 +18,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { User, UserPayload } from '../auth';
+import { Authentication, Project } from '../auth/decorators';
+import { UserService } from '../user/user.service';
+import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
+import { ItemService } from './item.service';
 
 @ApiBearerAuth()
 @ApiTags('items')
