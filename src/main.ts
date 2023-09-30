@@ -9,6 +9,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { inspect } from 'util';
+import { urlencoded, json } from 'express';
 import {
   SwaggerModule,
   DocumentBuilder,
@@ -18,6 +19,8 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.enableVersioning({ type: VersioningType.URI });
   app.useGlobalPipes(
     new ValidationPipe({
@@ -68,3 +71,4 @@ async function bootstrap() {
   });
 }
 bootstrap();
+

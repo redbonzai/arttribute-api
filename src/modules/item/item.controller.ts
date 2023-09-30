@@ -16,9 +16,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators';
+import { Authentication, Project } from '../auth/decorators';
 import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
+import { UserService } from '../user/user.service';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -31,10 +32,13 @@ import {
 
 @ApiBearerAuth()
 @ApiTags('items')
-@UseGuards(JwtAuthGuard)
+@Authentication('any')
 @Controller({ version: '1', path: 'items' })
 export class ItemController {
-  constructor(private readonly itemService: ItemService) {}
+  constructor(
+    private readonly itemService: ItemService,
+    private readonly userService: UserService,
+  ) {}
 
   @ApiOperation({ summary: 'Get all items' })
   @ApiResponse({
@@ -61,16 +65,40 @@ export class ItemController {
   })
   @ApiResponse({ status: 404, description: 'Item not found' })
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(
+    @Param('id') id: string,
+    @User() user?: UserPayload,
+    @Project() project?: any,
+  ) {
+    user = await this.userService.populateUser(user, project);
     return this.itemService.findOne(id);
   }
 
   // DEPRECATED
-  // @Post('fileupload')
+  // // @Post('fileupload')
+  // // @UseInterceptors(FileInterceptor('file'))
+  // // async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  // //   return this.itemService.uploadToWeb3Storage(file);
+  // // }
+
+  /************** -------- Not in use anymore ---------**************/
+  // @Post()
   // @UseInterceptors(FileInterceptor('file'))
-  // async uploadFile(@UploadedFile() file: Express.Multer.File) {
-  //   return this.itemService.uploadToWeb3Storage(file);
+  // async create(
+  //   @UploadedFile(
+  //     new ParseFilePipe({
+  //       validators: [new MaxFileSizeValidator({ maxSize: 10000000 })],
+  //     }),
+  //   )
+  //   file: Express.Multer.File,
+  //   @Body() createItem: CreateItemDto, //TODO: Should currency input be limited in array?
+  //   @User() user: UserPayload,
+  //   @Project() project: any,
+  // ) {
+  //   console.log(user);
+  //   return this.itemService.create(file, createItem, user, project);
   // }
+  /************** -------- Not in use anymore ---------**************/
 
   @ApiOperation({ summary: 'Create an item' })
   @ApiHeader({
@@ -84,29 +112,19 @@ export class ItemController {
     type: ItemResponse,
   })
   @ApiResponse({ status: 401, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'File not found' })
-  //   @UseGuards(JwtAuthGuard)
-  @UseGuards(ApiKeyAuthGuard)
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Image file',
     type: CreateItemDto,
   })
   async create(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [new MaxFileSizeValidator({ maxSize: 10000000 })],
-      }),
-    )
-    file: Express.Multer.File,
-    @Body() createItem: CreateItemDto,
+    @Body() createItem: CreateItemDto, //TODO: Should currency input be limited in array?
     @User() user: UserPayload,
     @Project() project: any,
   ) {
-    // console.log(createItem);
-    return this.itemService.create(file, createItem, user, project);
+    user = user || (await this.userService.populateUser(user, project));
+    return this.itemService.create(createItem, user, project);
   }
 
   @ApiOperation({ summary: 'Update an item' })
@@ -117,16 +135,15 @@ export class ItemController {
   })
   @ApiResponse({ status: 404, description: 'Item not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
-  //   @UseGuards(JwtAuthGuard)
-  @UseGuards(ApiKeyAuthGuard)
   @Patch(':id')
   @HttpCode(204)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateItem: UpdateItemDto,
     @User() user: UserPayload,
     @Project() project: any,
   ) {
+    user = user || (await this.userService.populateUser(user, project));
     return this.itemService.update(id, updateItem, user, project);
   }
 

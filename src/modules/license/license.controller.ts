@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { LicenseService } from './license.service';
 import { LicenseModel } from './license.dto';
@@ -16,8 +15,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth';
+import { Authentication } from '../auth';
 
+@Authentication('jwt')
 @ApiTags('licenses')
 @Controller({ version: '1', path: 'licenses' })
 export class LicenseController {
@@ -53,7 +53,7 @@ export class LicenseController {
     description: 'Successfully created a new license',
     type: LicenseModel,
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post()
   create(@Body() createLicense: LicenseModel) {
     return this.licenseService.create(createLicense);
@@ -61,7 +61,7 @@ export class LicenseController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a license' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Patch(':id')
   // TODO: do something here
   update(@Param('id') id: string, @Body() updateLicense: LicenseModel) {
@@ -75,7 +75,7 @@ export class LicenseController {
     description: 'Successfully deleted a license',
   })
   @ApiResponse({ status: 404, description: 'License not found' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.licenseService.remove(id);

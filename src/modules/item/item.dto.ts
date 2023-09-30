@@ -1,15 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
 import {
   IsArray,
-  IsBooleanString,
   IsBoolean,
-  IsDefined,
   IsNotEmpty,
   IsNumber,
-  IsNumberString,
   IsObject,
   IsString,
   IsIn,
+  ValidateNested,
 } from 'class-validator';
 import { User } from '../user/user.dto';
 import { PolybaseProject } from '../project/project.dto';
@@ -27,7 +26,17 @@ class Price {
    */
   @IsNotEmpty()
   @IsString()
+  @IsIn(['cUSD', 'ETH'])
   currency!: string;
+}
+
+class FileData {
+  @IsNotEmpty()
+  @IsString()
+  data: string;
+
+  @IsString()
+  mimetype: string;
 }
 
 export class ItemDto {
@@ -77,16 +86,10 @@ export class ItemDto {
    */
   // TODO: fix this
   @IsNotEmpty()
-  @IsNumberString()
-  price_amount: string;
-
-  /**
-   * Price of the item
-   * @example "KSH"
-   */
-  @IsNotEmpty()
-  @IsString()
-  price_currency: string;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => Price)
+  price: Price;
 
   /**
    * Licenses for the item
@@ -94,7 +97,7 @@ export class ItemDto {
    */
   @IsString({ each: true })
   @IsArray()
-  @IsIn(['ATR', 'NCM', 'NDR'], { each: true })
+  @IsIn(['ATR', 'NCM', 'NDR', 'SHA'], { each: true })
   license: string[];
 
   /**
@@ -102,7 +105,7 @@ export class ItemDto {
    * @example true
    */
   @IsNotEmpty()
-  @IsBooleanString()
+  @IsBoolean()
   needsRequest: boolean;
 }
 
@@ -148,8 +151,11 @@ export class ItemResponse extends ItemDto {
 }
 
 export class CreateItemDto extends ItemDto {
-  @ApiProperty({ type: 'string', format: 'binary' })
-  file: Express.Multer.File;
+  @IsObject()
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => FileData)
+  file: FileData;
 }
 
 export class UpdateItemDto extends ItemDto {
@@ -167,10 +173,12 @@ export class UpdateItemDto extends ItemDto {
   @IsString()
   source: string;
   @IsObject()
+  @ValidateNested()
+  @Type(() => Price)
   price: Price;
   @IsString({ each: true })
   @IsArray()
   license: string[];
-  @IsBooleanString()
+  @IsBoolean()
   needsRequest: boolean;
 }

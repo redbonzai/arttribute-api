@@ -6,10 +6,9 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators';
+import { Authentication, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators/project.decorator';
 import { CollectionResponse, CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
 import {
@@ -37,8 +36,7 @@ export class CollectionController {
     description: 'Successfully created a new collection',
     type: CollectionResponse,
   })
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(ApiKeyAuthGuard)
+  @Authentication('any')
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,
@@ -118,7 +116,7 @@ export class CollectionController {
   })
   @ApiResponse({ status: 404, description: 'Collection not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
@@ -140,7 +138,7 @@ export class CollectionController {
   })
   @ApiResponse({ status: 404, description: 'Collection not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Delete(':id/items/:itemId')
   async removeItemFromCollection(
     @Param('id') collectionId: string,

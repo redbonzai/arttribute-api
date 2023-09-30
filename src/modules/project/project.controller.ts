@@ -1,14 +1,8 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { JwtAuthGuard, User, UserPayload } from '../auth';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { User, UserPayload } from '../auth';
 import { CreateProject, PolybaseProject, UpdateProject } from './project.dto';
 import { ProjectService } from './project.service';
+import { Authentication } from '../auth/decorators';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -28,7 +22,7 @@ export class ProjectController {
     description: 'Successfully created a new project',
     type: PolybaseProject,
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Post()
   async createProject(
     @Body() projectDto: CreateProject,
@@ -45,7 +39,7 @@ export class ProjectController {
   })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Patch(':id')
   async updateProject(
     @Body() updateProjectDto: UpdateProject,

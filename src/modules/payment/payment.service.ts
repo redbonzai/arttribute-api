@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -10,6 +12,7 @@ import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { UserPayload } from '../auth';
 import { CreatePayment } from './payment.dto';
+import { first } from 'lodash';
 
 @Injectable()
 export class PaymentService {
@@ -20,7 +23,7 @@ export class PaymentService {
   networkCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.paymentCollection = this.db.collection('Payment');
     this.itemCollection = this.db.collection('Item');
     this.collectionsCollection = this.db.collection('Collection');
@@ -56,7 +59,7 @@ export class PaymentService {
           price: item.price,
         };
       } else {
-        throw new NotFoundException('record not found');
+        throw new NotFoundException('Reference item does not exist');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionsCollection
@@ -77,7 +80,7 @@ export class PaymentService {
           price: collection.price,
         };
       } else {
-        throw new NotFoundException('record not found');
+        throw new NotFoundException('Reference collection does not exist');
       }
     } else {
       throw new NotFoundException(`reference ${type} does not exist`);
@@ -91,7 +94,7 @@ export class PaymentService {
     if (network) {
       return { id: network.id };
     } else {
-      throw new NotFoundException('Network not supported');
+      throw new BadRequestException('Unsupported network specified');
     }
   }
 
@@ -110,7 +113,9 @@ export class PaymentService {
 
     //check if sender is not the owner of the reference
     if (reference.owner.id === user.sub) {
-      throw new BadRequestException('You cannot pay for your own item');
+      throw new BadRequestException(
+        'You are the owner of this item/collection. You cannot make a payment for your own item/collection',
+      );
     }
 
     //check if payment amount is less than the required price
@@ -120,15 +125,15 @@ export class PaymentService {
       );
     }
 
-    // const paymentExists = await this.paymentCollection
-    //   .where('transactionHash', '==', paymentDto.transactionHash)
-    //   .get();
-    // if (paymentExists) {
-    //   throw new HttpException(
-    //     'Payment with the transaction hash already exists',
-    //     HttpStatus.BAD_REQUEST,
-    //   );
-    // }
+    const paymentExists = await this.paymentCollection
+      .where('transactionHash', '==', paymentDto.transactionHash)
+      .get();
+    if (first(paymentExists.data)?.data) {
+      throw new HttpException(
+        'Payment with the transaction hash already exists',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     //To do: get endpoint from network
     const network = await this.findNetwork(paymentDto.network.chainId);
@@ -156,7 +161,7 @@ export class PaymentService {
     //create payment once transaction is confirmed
     try {
       const payment = await this.paymentCollection.create([
-        //paymentDto.transactionHash,
+        paymentDto.transactionHash, // could also be uuid
         paymentDto.reference.type,
         paymentDto.reference.id,
         paymentDto.transactionHash,
@@ -165,7 +170,7 @@ export class PaymentService {
         paymentDto.amount,
         paymentDto.currency,
         paymentType,
-        //project.name,
+        project.name,
         this.db.collection('Project').record(project.id),
         this.db.collection('Network').record(network.id),
         createdAt,
@@ -182,7 +187,6 @@ export class PaymentService {
   async getUserPaymentsReceived(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('receiver', '==', this.db.collection('User').record(user.sub))
-      .sort('created', 'desc')
       .get();
     return payments;
   }
@@ -191,7 +195,6 @@ export class PaymentService {
   async getUserPaymentsSent(user: UserPayload) {
     const payments = await this.paymentCollection
       .where('sender', '==', this.db.collection('User').record(user.sub))
-      .sort('created', 'desc')
       .get();
     return payments;
   }
@@ -200,8 +203,18 @@ export class PaymentService {
   async getPaymentsBySource(source: string) {
     const payments = await this.paymentCollection
       .where('source', '==', source)
-      .sort('created', 'desc')
       .get();
     return payments;
   }
+
+  //Delete payment
+  async deletePayment(id: string) {
+    const payment = await this.paymentCollection.record(id).get();
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+    await this.paymentCollection.record(id).call('del');
+    return payment;
+  }
 }
+

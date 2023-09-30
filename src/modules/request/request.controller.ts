@@ -1,7 +1,16 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { CreateRequest, PermissionRequest } from './request.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { User, UserPayload } from '../auth';
+import { CreateRequest, UpdateRequest, PermissionRequest } from './request.dto';
 import { RequestService } from './request.service';
+import { Authentication } from '../auth/decorators';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -22,13 +31,13 @@ export class RequestController {
     type: PermissionRequest,
   })
   @ApiResponse({ status: 400, description: 'You cannot request your own item' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post()
   async createRequest(
     @Body() requestDto: CreateRequest,
     @User() user: UserPayload,
   ) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.createRequest(requestDto, userId);
   }
 
@@ -38,10 +47,10 @@ export class RequestController {
     description: 'Successfully retrieved received requests',
     type: PermissionRequest,
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/received')
   async getReceivedRequests(@User() user: UserPayload) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.getReceivedRequests(userId);
   }
 
@@ -51,10 +60,27 @@ export class RequestController {
     description: 'Successfully retrieved sent requests',
     type: PermissionRequest,
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/sent')
   async getSentRequests(@User() user: UserPayload) {
-    const userId = user.publicKey;
+    const userId = user.sub;
     return this.requestService.getSentRequests(userId);
+  }
+
+  @Authentication('jwt')
+  @Patch(':id')
+  async updateRequestStatus(
+    @Body() updateDto: UpdateRequest,
+    @User() user: UserPayload,
+    @Param('id') id: string,
+  ) {
+    const userId = user.sub;
+    return this.requestService.updateRequestStatus(updateDto, id, userId);
+  }
+
+  //Delete Request
+  @Delete(':id')
+  async deletePayment(@Param('id') id: string) {
+    return this.requestService.deleteRequest(id);
   }
 }

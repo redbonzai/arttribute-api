@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project, Authentication } from '../auth/decorators';
 import { CreatePayment, Payment } from './payment.dto';
 import { PaymentService } from './payment.service';
 import {
@@ -24,8 +33,7 @@ export class PaymentController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Network not supported' })
-  //   @UseGuards(JwtAuthGuard)
-  @UseGuards(JwtAuthGuard, ApiKeyAuthGuard)
+  @Authentication('all')
   @Post()
   async createPayment(
     @Body() paymentDto: CreatePayment,
@@ -41,12 +49,13 @@ export class PaymentController {
     description: 'Successfully retrieved all payments received by user',
     type: [Payment],
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/received')
   async getUserPaymentsReceived(@User() user: UserPayload) {
     return this.paymentService.getUserPaymentsReceived(user);
   }
 
+  @Authentication('jwt')
   @ApiOperation({ summary: 'Get all payments sent by user' })
   @ApiResponse({
     status: 200,
@@ -64,8 +73,14 @@ export class PaymentController {
     description: 'Successfully retrieved all payments by source',
     type: [Payment],
   })
-  @Get('/:source')
-  async getPaymentsBySource(@Query('source') source: string) {
+  @Get(':source')
+  async getPaymentsBySource(@Param('source') source: string) {
     return this.paymentService.getPaymentsBySource(source);
+  }
+
+  //Delete Payment
+  @Delete(':id')
+  async deletePayment(@Param('id') id: string) {
+    return this.paymentService.deletePayment(id);
   }
 }

@@ -1,15 +1,5 @@
-import {
-  IsArray,
-  IsString,
-  IsNumber,
-  IsNotEmpty,
-  ValidateNested,
-  IsDefined,
-  IsIn,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsDefined, IsIn, IsUUID } from 'class-validator';
 
-import { Type } from 'class-transformer';
 import { User } from '../user/user.dto';
 
 class Reference {
