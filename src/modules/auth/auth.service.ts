@@ -25,7 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private polybaseService: PolybaseService,
   ) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.userCollection = this.db.collection('User');
     this.apikeyCollection = this.db.collection('ApiKey');
     this.projectCollection = this.db.collection('Project');

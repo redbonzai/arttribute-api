@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { PolybaseService } from '~/shared/polybase';
 import { getSignerData } from '~/shared/util/getSignerData';
+import { UserPayload } from '../auth';
 
 @Injectable()
 export class UserService {
@@ -9,9 +14,31 @@ export class UserService {
   private readonly userCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.userCollection = this.db.collection('User');
   }
+
+  async findUser(id: string) {
+    const { data: user } = await this.userCollection.record(id).get();
+    if (user) {
+      return user;
+    } else {
+      throw new NotFoundException('record not found');
+    }
+  }
+
+  async populateUser(user, project): Promise<UserPayload> {
+    if (user) {
+      return user;
+    } else {
+      user = await this.findUser(project.owner.id);
+      return {
+        'sub': user.id,
+        'wallet_address': user.address,
+      };
+    }
+  }
+
   async createUser(
     message,
     signature,
