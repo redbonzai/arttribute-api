@@ -38,8 +38,6 @@ async function bootstrap() {
       },
     }),
   );
-  //cors
-  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('Arttribute')

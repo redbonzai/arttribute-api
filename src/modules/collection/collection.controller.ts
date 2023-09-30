@@ -32,7 +32,7 @@ export class CollectionController {
     type: CollectionResponse,
   })
   @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,

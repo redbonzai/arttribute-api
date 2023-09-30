@@ -15,9 +15,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+<<<<<<< HEAD
 import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators/project.decorator';
 import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
+=======
+import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project } from '../auth/decorators';
+import { CreateItemDto, UpdateItemDto } from './item.dto';
+>>>>>>> 5f857e222eb79f7707bee208763ccf2ae522202b
 import { ItemService } from './item.service';
 import {
   ApiBearerAuth,
@@ -54,6 +60,7 @@ export class ItemController {
     return this.itemService.uploadToWeb3Storage(file);
   }
 
+<<<<<<< HEAD
   @ApiOperation({ summary: 'Create a new collection' })
   @ApiResponse({
     status: 201,
@@ -62,6 +69,10 @@ export class ItemController {
   })
   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
+=======
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
+>>>>>>> 5f857e222eb79f7707bee208763ccf2ae522202b
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(
@@ -79,8 +90,13 @@ export class ItemController {
     return this.itemService.create(file, data, user, project);
   }
 
+<<<<<<< HEAD
   @UseGuards(JwtAuthGuard)
   @UseGuards(APIKeyAuthGuard)
+=======
+  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(ApiKeyAuthGuard)
+>>>>>>> 5f857e222eb79f7707bee208763ccf2ae522202b
   @Patch(':id')
   @HttpCode(204)
   update(

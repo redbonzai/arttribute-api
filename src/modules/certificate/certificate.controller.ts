@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Project, Authentication } from '../auth/decorators';
 
 @ApiTags('certificates')
 @Controller({ version: '1', path: 'certificates' })
@@ -97,7 +98,10 @@ export class CertificateController {
   public async getCertificate(
     @Param('certificateId') certificateId: string,
     @Query('full') full: boolean,
+    @User() user: UserPayload,
+    @Project() project: any,
   ) {
+    console.log({ user, project });
     return this.certificateService.getCertificate({ certificateId }, { full });
   }
 
