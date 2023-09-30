@@ -8,8 +8,8 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators/project.decorator';
+import { JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project, Authentication } from '../auth/decorators';
 import { CreatePayment } from './payment.dto';
 import { PaymentService } from './payment.service';
 
@@ -17,8 +17,7 @@ import { PaymentService } from './payment.service';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @Authentication('all')
   @Post()
   async createPayment(
     @Body() paymentDto: CreatePayment,
@@ -28,13 +27,13 @@ export class PaymentController {
     return this.paymentService.createPayment(paymentDto, user, project);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/received')
   async getUserPaymentsReceived(@User() user: UserPayload) {
     return this.paymentService.getUserPaymentsReceived(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/sent')
   async getUserPaymentsSent(@User() user: UserPayload) {
     return this.paymentService.getUserPaymentsSent(user);

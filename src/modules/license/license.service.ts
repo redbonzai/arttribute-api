@@ -45,7 +45,7 @@ export class LicenseService {
   }
 
   update() {
-    return `This action updates an license`;
+    return `This action updates a license`;
   }
 
   public async remove(id: string) {

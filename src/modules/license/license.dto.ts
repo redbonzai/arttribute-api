@@ -32,6 +32,7 @@ export class LicenseModel {
   @IsString()
   symbol: string;
 
+  @IsNotEmpty()
   @IsString()
   family: string;
 }

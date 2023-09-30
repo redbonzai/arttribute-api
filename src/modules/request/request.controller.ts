@@ -11,12 +11,13 @@ import {
 import { JwtAuthGuard, User, UserPayload } from '../auth';
 import { CreateRequest, UpdateRequest } from './request.dto';
 import { RequestService } from './request.service';
+import { Authentication, Project } from '../auth/decorators';
 
 @Controller({ version: '1', path: 'requests' })
 export class RequestController {
   constructor(private readonly requestService: RequestService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post()
   async createRequest(
     @Body() requestDto: CreateRequest,
@@ -26,21 +27,21 @@ export class RequestController {
     return this.requestService.createRequest(requestDto, userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/received')
   async getReceivedRequests(@User() user: UserPayload) {
     const userId = user.sub;
     return this.requestService.getReceivedRequests(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Get('/sent')
   async getSentRequests(@User() user: UserPayload) {
     const userId = user.sub;
     return this.requestService.getSentRequests(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Patch(':id')
   async updateRequestStatus(
     @Body() updateDto: UpdateRequest,

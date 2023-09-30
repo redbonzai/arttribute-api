@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { LicenseService } from './license.service';
 import { LicenseModel } from './license.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('licenses')
+@UseGuards(JwtAuthGuard)
 @Controller({ version: '1', path: 'licenses' })
 export class LicenseController {
   constructor(private readonly licenseService: LicenseService) {}
@@ -68,3 +70,4 @@ export class LicenseController {
     return this.licenseService.remove(id);
   }
 }
+

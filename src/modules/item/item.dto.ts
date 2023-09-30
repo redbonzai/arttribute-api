@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBooleanString,
@@ -9,6 +10,7 @@ import {
   IsObject,
   IsString,
   IsIn,
+  ValidateNested,
 } from 'class-validator';
 
 class Price {
@@ -18,7 +20,17 @@ class Price {
 
   @IsNotEmpty()
   @IsString()
+  @IsIn(['cUSD', 'ETH'])
   currency!: string;
+}
+
+class FileData {
+  @IsNotEmpty()
+  @IsString()
+  data: string;
+
+  @IsString()
+  mimetype: string;
 }
 
 export class ItemDto {
@@ -43,12 +55,10 @@ export class ItemDto {
   source: string;
 
   @IsNotEmpty()
-  @IsNumberString()
-  price_amount: string;
-
-  @IsNotEmpty()
-  @IsString()
-  price_currency: Price;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => Price)
+  price: Price;
 
   @IsString({ each: true })
   @IsArray()
@@ -56,11 +66,17 @@ export class ItemDto {
   license: string[];
 
   @IsNotEmpty()
-  @IsBooleanString()
+  @IsBoolean()
   needsRequest: boolean;
 }
 
-export class CreateItemDto extends ItemDto {}
+export class CreateItemDto extends ItemDto {
+  @IsObject()
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => FileData)
+  file: FileData;
+}
 
 export class ItemResponse extends CreateItemDto {
   id: string;
@@ -84,11 +100,13 @@ export class UpdateItemDto extends ItemDto {
   @IsString()
   source: string;
   @IsObject()
+  @ValidateNested()
+  @Type(() => Price)
   price: Price;
   @IsString({ each: true })
   @IsArray()
   license: string[];
-  @IsBooleanString()
+  @IsBoolean()
   needsRequest: boolean;
 }
 

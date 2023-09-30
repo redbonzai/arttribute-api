@@ -6,15 +6,16 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard, User, UserPayload } from '../auth';
+import { User, UserPayload } from '../auth';
 import { CreateProject, UpdateProject } from './project.dto';
 import { ProjectService } from './project.service';
+import { Authentication } from '../auth/decorators';
 
 @Controller({ version: '1', path: 'projects' })
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Post()
   async createProject(
     @Body() projectDto: CreateProject,
@@ -23,7 +24,7 @@ export class ProjectController {
     return this.projectService.createProject(projectDto, user.sub);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Patch(':id')
   async updateProject(
     @Body() updateProjectDto: UpdateProject,
@@ -37,3 +38,4 @@ export class ProjectController {
     );
   }
 }
+

@@ -7,7 +7,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { User, UserPayload } from '../auth';
+import { Project, Authentication } from '../auth/decorators';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 import {
@@ -16,7 +17,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Project, Authentication } from '../auth/decorators';
 
 @ApiTags('certificates')
 @Controller({ version: '1', path: 'certificates' })
@@ -32,7 +32,7 @@ export class CertificateController {
   @ApiResponse({ status: 404, description: 'No reference found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post()
   public async createCertificate(
     @Body() body: CreateCertificate,
@@ -69,7 +69,7 @@ export class CertificateController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mint a certificate' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post('/mint/:certificateId')
   public async mintCertificate(
     @Param('certificateId') certificateId: string,
@@ -92,7 +92,7 @@ export class CertificateController {
     description: 'Successfully retrieved a certificate',
     type: PolybaseCertificate,
   })
-  @UseGuards(APIKeyAuthGuard)
+  @Authentication('all')
   @Get('/:certificateId')
   // TODO: a bit of an issue
   public async getCertificate(
@@ -116,7 +116,7 @@ export class CertificateController {
     description: 'Successfully retrieved certificates for a user',
     type: [PolybaseCertificate],
   })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('any')
   @Get('/:userId/references') // TODO: This route structure?
   public async discoverUserCertificates(
     @Param('userId') userId: string,
@@ -128,3 +128,4 @@ export class CertificateController {
     );
   }
 }
+
