@@ -10,32 +10,9 @@ import {
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
-
-class User {
-  @IsString()
-  @IsNotEmpty()
-  id: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-}
-
-class Network {
-  /**
-   * @example "Celo"
-   */
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  /**
-   * @example "123e4567-e89b-12d3-a456-426614174000"
-   */
-  @IsString()
-  @IsNotEmpty()
-  chainId: string;
-}
+import { Network } from '../network/network.dto';
+import { User } from '../user/user.dto';
+import { PolybaseProject } from '../project/project.dto';
 
 class Reference {
   /**
@@ -106,6 +83,37 @@ export class CreatePayment {
   @ValidateNested()
   @Type(() => Network)
   network: Network;
+}
+
+export class Payment extends CreatePayment {
+  /**
+   * The payment's UUID
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
+  @IsNotEmpty()
+  @IsUUID()
+  id: string;
+
+  /**
+   * The user who sent the payment
+   */
+  sender: User;
+
+  /**
+   * The user who received the payment
+   */
+  receiver: User;
+
+  /**
+   * The project the payment was made to
+   */
+  project?: PolybaseProject;
+
+  /**
+   * The date the payment was created
+   * @example "2021-01-01T00:00:00.000Z"
+   */
+  created: string;
 }
 
 // Example JSON for create payment

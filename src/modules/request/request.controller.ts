@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { CreateRequest } from './request.dto';
+import { CreateRequest, PermissionRequest } from './request.dto';
 import { RequestService } from './request.service';
 import {
   ApiBearerAuth,
@@ -19,6 +19,7 @@ export class RequestController {
   @ApiResponse({
     status: 201,
     description: 'Successfully created a new request',
+    type: PermissionRequest,
   })
   @ApiResponse({ status: 400, description: 'You cannot request your own item' })
   @UseGuards(JwtAuthGuard)
@@ -35,6 +36,7 @@ export class RequestController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved received requests',
+    type: PermissionRequest,
   })
   @UseGuards(JwtAuthGuard)
   @Get('/received')
@@ -47,6 +49,7 @@ export class RequestController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved sent requests',
+    type: PermissionRequest,
   })
   @UseGuards(JwtAuthGuard)
   @Get('/sent')

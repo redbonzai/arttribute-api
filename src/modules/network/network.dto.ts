@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 
-class Network {
+export class CreateNetwork {
   /**
    * The unique identifier of the network chain registered
    * @example "123e4567-e89b-12d3-a456-426614174000"
@@ -42,4 +42,22 @@ class Network {
   endpoint: string;
 }
 
-export class CreateNetwork extends Network {}
+export class Network extends CreateNetwork {
+  /**
+   * The network's UUID
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
+  id: string;
+
+  /**
+   * The date the network was created
+   * @example "2021-01-01T00:00:00.000Z"
+   */
+  created: string;
+
+  /**
+   * The date the network was last updated
+   * @example "2021-01-01T00:00:00.000Z"
+   */
+  updated: string;
+}

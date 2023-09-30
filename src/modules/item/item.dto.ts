@@ -11,6 +11,8 @@ import {
   IsString,
   IsIn,
 } from 'class-validator';
+import { User } from '../user/user.dto';
+import { PolybaseProject } from '../project/project.dto';
 
 class Price {
   /**
@@ -102,6 +104,47 @@ export class ItemDto {
   @IsNotEmpty()
   @IsBooleanString()
   needsRequest: boolean;
+}
+
+export class ItemResponse extends ItemDto {
+  /**
+   * The item's UUID
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
+  id: string;
+
+  /**
+   * The item's owner
+   */
+  owner: User;
+
+  /**
+   * The item's project
+   */
+  project: PolybaseProject;
+
+  /**
+   * The item's URL
+   * @example "https://arttribute.xyz/item/123e4567-e89b-12d3-a456-426614174000"
+   */
+  url: string;
+
+  /**
+   * The item's price
+   */
+  price: Price;
+
+  /**
+   * The date the network was created
+   * @example "2021-01-01T00:00:00.000Z"
+   */
+  created: string;
+
+  /**
+   * The date the network was last updated
+   * @example "2021-01-01T00:00:00.000Z"
+   */
+  updated: string;
 }
 
 export class CreateItemDto extends ItemDto {

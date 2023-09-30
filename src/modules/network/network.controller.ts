@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { NetworkService } from './network.service';
-import { CreateNetwork } from './network.dto';
+import { CreateNetwork, Network } from './network.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('networks')
@@ -12,6 +12,7 @@ export class NetworkController {
   @ApiResponse({
     status: 201,
     description: 'The network has been successfully created.',
+    type: Network,
   })
   @Post()
   async createNetwork(@Body() networkDto: CreateNetwork) {

@@ -1,21 +1,52 @@
 import { IsString, IsNotEmpty, ValidateNested } from 'class-validator';
 
 import { Type } from 'class-transformer';
+import { User } from '../user/user.dto';
 
-class User {
-  @IsString()
-  @IsNotEmpty()
-  id: string;
-
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-}
+// collection Project {
+//   id: string;
+//   owner:User;
+//   name: string;
+//   url?: string;
+//   created: string;
+//   updated: string;
+// }
 
 export class PolybaseProject {
+  /**
+   * The project's UUID
+   * @example '12345678-1234-1234-1234-123456789012'
+   */
   id: string;
+
+  /**
+   * The project's owner
+   */
+  owner: User;
+
+  /**
+   * The project's name
+   * @example 'Picasso Project'
+   */
   name: string;
+
+  /**
+   * The project's url
+   * @example 'https://attribute.io'
+   */
   url: string;
+
+  /**
+   * The date the project was created
+   * @example '2021-01-01T00:00:00.000Z'
+   */
+  created: string;
+
+  /**
+   * The date the project was updated
+   * @example '2021-01-01T00:00:00.000Z'
+   */
+  updated: string;
 }
 
 export class ProjectDto {

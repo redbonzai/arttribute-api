@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
-import { CreatePayment } from './payment.dto';
+import { CreatePayment, Payment } from './payment.dto';
 import { PaymentService } from './payment.service';
 import {
   ApiBearerAuth,
@@ -20,6 +20,7 @@ export class PaymentController {
   @ApiResponse({
     status: 201,
     description: 'Successfully created a new payment',
+    type: Payment,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Network not supported' })
@@ -38,6 +39,7 @@ export class PaymentController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all payments received by user',
+    type: [Payment],
   })
   @UseGuards(JwtAuthGuard)
   @Get('/received')
@@ -49,6 +51,7 @@ export class PaymentController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all payments sent by user',
+    type: [Payment],
   })
   @Get('/sent')
   async getUserPaymentsSent(@User() user: UserPayload) {
@@ -59,6 +62,7 @@ export class PaymentController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all payments by source',
+    type: [Payment],
   })
   @Get('/:source')
   async getPaymentsBySource(@Query('source') source: string) {

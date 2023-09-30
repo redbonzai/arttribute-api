@@ -13,6 +13,7 @@ import { CertificateService } from './certificate.service';
 import { Project, Authentication } from '../auth/decorators';
 import {
   ApiBearerAuth,
+  ApiHeader,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -91,6 +92,11 @@ export class CertificateController {
     status: 200,
     description: 'Successfully retrieved a certificate',
     type: PolybaseCertificate,
+  })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'The API key for the project',
+    required: true,
   })
   @Authentication('api-key')
   @Get('/:certificateId')

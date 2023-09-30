@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { CreateProject, UpdateProject } from './project.dto';
+import { CreateProject, PolybaseProject, UpdateProject } from './project.dto';
 import { ProjectService } from './project.service';
 import {
   ApiBearerAuth,
@@ -26,6 +26,7 @@ export class ProjectController {
   @ApiResponse({
     status: 201,
     description: 'Successfully created a new project',
+    type: PolybaseProject,
   })
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -40,6 +41,7 @@ export class ProjectController {
   @ApiResponse({
     status: 200,
     description: 'Successfully updated a project',
+    type: PolybaseProject,
   })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

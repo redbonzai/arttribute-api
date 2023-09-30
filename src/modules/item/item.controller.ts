@@ -17,7 +17,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators';
-import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { CreateItemDto, ItemResponse, UpdateItemDto } from './item.dto';
 import { ItemService } from './item.service';
 import {
   ApiBearerAuth,
@@ -40,6 +40,7 @@ export class ItemController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved all items',
+    type: [ItemResponse],
   })
   @Get()
   findAll(
@@ -56,6 +57,7 @@ export class ItemController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved item',
+    type: ItemResponse,
   })
   @ApiResponse({ status: 404, description: 'Item not found' })
   @Get(':id')
@@ -79,6 +81,7 @@ export class ItemController {
   @ApiResponse({
     status: 201,
     description: 'Successfully created an item',
+    type: ItemResponse,
   })
   @ApiResponse({ status: 401, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'File not found' })
@@ -110,6 +113,7 @@ export class ItemController {
   @ApiResponse({
     status: 204,
     description: 'Successfully updated an item',
+    type: ItemResponse,
   })
   @ApiResponse({ status: 404, description: 'Item not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
