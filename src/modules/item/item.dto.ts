@@ -102,3 +102,4 @@ export class UpdateItemDto extends ItemDto {
   @IsBoolean()
   needsRequest: boolean;
 }
+

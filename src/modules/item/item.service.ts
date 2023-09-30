@@ -176,7 +176,7 @@ export class ItemService {
       this.db.collection('User').record(user.sub),
       createItem.source.toLowerCase(),
       this.db.collection('Project').record(project.id),
-      createItem.license.join(),
+      createItem.license.join(''),
       createItem.license.map((license_id) =>
         LicenseCollection.record(license_id),
       ),
@@ -254,3 +254,4 @@ export class ItemService {
     }
   }
 }
+

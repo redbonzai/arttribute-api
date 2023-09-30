@@ -8,17 +8,30 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project } from '../auth/decorators';
-import { CreateCollection } from './collection.dto';
+import { JwtAuthGuard, User, UserPayload } from '../auth';
+import { Project, Authentication } from '../auth/decorators';
+import { CollectionResponse, CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('collections')
+@ApiBearerAuth()
 @Controller({ version: '1', path: 'collections' })
 export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(ApiKeyAuthGuard)
+  @ApiOperation({ summary: 'Create a new collection' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created a new collection',
+    type: CollectionResponse,
+  })
+  @Authentication('any')
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,
@@ -32,21 +45,50 @@ export class CollectionController {
     );
   }
 
+  @ApiOperation({ summary: 'Get all collections' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all collections',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'No Collection found' })
   @Get()
   async getAllCollections() {
     return await this.collectionService.getAllCollections();
   }
 
+  @ApiOperation({ summary: 'Get all collections for a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all collections for a user',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'No collection found for user' })
   @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
   async getCollectionsForUser(@Param('id') userId: string) {
     return await this.collectionService.getCollectionsForUser(userId);
   }
 
+  @ApiOperation({ summary: 'Get a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved a collection',
+    type: CollectionResponse,
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
   @Get(':id')
   async getCollection(@Param('id') collectionId: string) {
     return await this.collectionService.getCollection(collectionId);
   }
 
+  @ApiOperation({ summary: 'Change the visibility of a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully changed the visibility of a collection',
+    type: CollectionResponse,
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
   @Patch(':id')
   async changeVisibility(
     @Param('id') collectionId: string,
@@ -61,7 +103,15 @@ export class CollectionController {
   }
 
   // TODO: check on the API structure for adding and removing items from a collection
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Add an item to a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully added an item collection',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
+  @Authentication('any')
   @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
@@ -75,7 +125,15 @@ export class CollectionController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Remove an item from a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully removed an item from the collection',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
+  @Authentication('any')
   @Delete(':id/items/:itemId')
   async removeItemFromCollection(
     @Param('id') collectionId: string,
@@ -89,6 +147,13 @@ export class CollectionController {
     );
   }
 
+  @ApiOperation({ summary: 'Delete a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully deleted a collection',
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
   @Delete(':id')
   async deleteCollection(
     @Param('id') collectionId: string,
@@ -97,3 +162,4 @@ export class CollectionController {
     return await this.collectionService.deleteCollection(collectionId, user);
   }
 }
+
