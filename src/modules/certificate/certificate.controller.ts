@@ -1,14 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { User, UserPayload } from '../auth';
-import { Project, Authentication } from '../auth/decorators';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
 import { CertificateService } from './certificate.service';
 import { Project, Authentication } from '../auth/decorators';

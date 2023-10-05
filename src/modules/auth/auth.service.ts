@@ -121,4 +121,3 @@ export class AuthService {
     return new sha256().update(val).digest('base64');
   }
 }
-

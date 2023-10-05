@@ -32,4 +32,3 @@ export class UserController {
     return { user };
   }
 }
-

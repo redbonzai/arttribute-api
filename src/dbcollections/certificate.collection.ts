@@ -43,4 +43,3 @@ collection Certificate {
   
 }
 `;
-
