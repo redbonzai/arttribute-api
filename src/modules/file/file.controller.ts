@@ -7,9 +7,8 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileService } from './file.service';
-import { Authentication } from '../auth';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileService } from './file.service';
 
 // @Authentication('any')
 @Controller({ version: '1', path: 'file' })

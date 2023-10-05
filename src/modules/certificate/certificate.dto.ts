@@ -58,4 +58,3 @@ class Certificate {
 export class CreateCertificate extends Certificate {}
 
 export class UpdateCertificate extends Certificate {}
-

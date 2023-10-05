@@ -3,7 +3,6 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ItemService } from '../item/item.service';
 import { File, Web3Storage } from 'web3.storage';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 

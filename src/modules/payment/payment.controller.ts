@@ -1,23 +1,14 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Post,
-  Query,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
-import { JwtAuthGuard, User, UserPayload } from '../auth';
-import { Project, Authentication } from '../auth/decorators';
-import { CreatePayment, Payment } from './payment.dto';
-import { PaymentService } from './payment.service';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { User, UserPayload } from '../auth';
+import { Authentication, Project } from '../auth/decorators';
+import { CreatePayment, Payment } from './payment.dto';
+import { PaymentService } from './payment.service';
 
 @ApiBearerAuth()
 @ApiTags('payments')

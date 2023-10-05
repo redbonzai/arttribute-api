@@ -4,16 +4,15 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Collection, Polybase, Query } from '@polybase/client';
+import { Collection, Polybase } from '@polybase/client';
 import { map, without } from 'lodash';
 import { UploadService } from 'src/shared/web3storage/upload.service';
-import { File, Web3Storage } from 'web3.storage';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { UserPayload } from '../auth';
+import { FileService } from '../file/file.service';
 import { UserService } from '../user/user.service';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
-import { FileService } from '../file/file.service';
 
 @Injectable()
 export class ItemService {
@@ -254,4 +253,3 @@ export class ItemService {
     }
   }
 }
-

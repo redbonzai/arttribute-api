@@ -4,17 +4,15 @@ import {
   Param,
   Post,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { User, UserPayload } from './decorators';
-import { JwtAuthGuard } from './guards';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { Authentication, User, UserPayload } from './decorators';
 
 @ApiTags('auth')
 @Controller({ version: '1', path: 'auth' })
@@ -53,7 +51,7 @@ export class AuthController {
     description: 'Successfully created API key',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
+  @Authentication('jwt')
   @Post('api-key/:id')
   async createAPIKey(
     @Param('id') projectId: string,

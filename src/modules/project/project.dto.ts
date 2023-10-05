@@ -1,6 +1,5 @@
-import { IsString, IsNotEmpty, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
-import { Type } from 'class-transformer';
 import { User } from '../user/user.dto';
 
 // collection Project {
