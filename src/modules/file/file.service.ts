@@ -9,7 +9,9 @@ import { generateUniqueId } from '~/shared/util/generateUniqueId';
 
 @Injectable()
 export class FileService {
-  client = new Web3Storage({ token: process.env.WEB3STORAGE_TOKEN });
+  client = new Web3Storage({
+    token: process.env.WEB3STORAGE_TOKEN || 'unavailable',
+  });
 
   public encodeToBase64(file: Express.Multer.File) {
     const encodedImage = `data:${file.mimetype};base64,${file.buffer.toString(

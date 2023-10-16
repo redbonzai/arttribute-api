@@ -21,7 +21,7 @@ export class UserController {
     @Body('message') message: string,
     @Body('signature') signature: string,
     @Body('name') name: string,
-  ): Promise<{ user }> {
+  ) {
     const user = await this.userService.createUser(
       message,
       signature,

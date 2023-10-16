@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Collection, Polybase } from '@polybase/client';
+import { Collection, Polybase, Query } from '@polybase/client';
 import { map, without } from 'lodash';
 import { UploadService } from 'src/shared/web3storage/upload.service';
 import { PolybaseService } from '~/shared/polybase';
@@ -13,6 +13,7 @@ import { UserPayload } from '../auth';
 import { FileService } from '../file/file.service';
 import { UserService } from '../user/user.service';
 import { CreateItemDto, UpdateItemDto } from './item.dto';
+import { Merge } from 'type-fest';
 
 @Injectable()
 export class ItemService {
@@ -34,9 +35,9 @@ export class ItemService {
     return item.exists();
   }
 
-  public async findAll(query: any) {
+  public async findAll(query: { source?: string; tags?: string }) {
     const reference = await this.itemCollection;
-    let builder: any = reference;
+    let builder: Collection<any> | Query<any> = reference;
     if (query.source) {
       const source = query.source.toLowerCase();
       builder = builder
@@ -66,7 +67,7 @@ export class ItemService {
     }
     // const { data: items } = await this.itemCollection.get();
     const { data: items } = await builder.get();
-    return items.map((item) => item.data);
+    return map(items, 'data');
   }
 
   public async findOne(id: string) {
