@@ -67,9 +67,7 @@ export class AuthService {
 
     const key = await this.apikeyCollection.create([
       generateUniqueId(),
-      this.db.collection('User').record(userId), // temp
       this.db.collection('Project').record(projectId),
-      'hard code', //temp
       this.hash(apiKey),
       createdAt,
     ]);

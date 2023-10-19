@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { ethers } from 'ethers';
-import { first, map } from 'lodash';
+import { concat, first, map } from 'lodash';
 import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
@@ -110,12 +110,13 @@ export class CertificateService {
       .where('sender', '==', this.db.collection('User').record(user.sub))
       .get()
       .then((result) => {
-        if (result.data.length === 0) {
+        const res = first(result.data);
+        if (!res) {
           throw new NotFoundException(
             'Permission request not found: This item/collection requires permission request',
           );
         }
-        return first(result.data);
+        return res;
       });
 
     if (permissionRequest) {
@@ -139,12 +140,13 @@ export class CertificateService {
       .where('sender', '==', this.db.collection('User').record(user.sub))
       .get()
       .then((result) => {
-        if (result.data.length === 0) {
+        const res = first(result.data);
+        if (!res) {
           throw new NotFoundException(
             'Payment not found: This item/collection requires payment',
           );
         }
-        return first(result.data);
+        return res;
       });
   }
 
@@ -223,7 +225,7 @@ export class CertificateService {
         .get();
 
       //If ceertificate is already minted
-      if (certificate.minted) {
+      if (certificate?.minted) {
         throw new UnauthorizedException('Certificate already minted');
       }
       const contractAddress = '0x6A803B8F038554AF34AC73F1C099bd340dcC7026'; //old '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
@@ -238,6 +240,9 @@ export class CertificateService {
       );
 
       const privateKey = process.env.MINT_KEY;
+      if (!privateKey) {
+        throw new Error('Mint Key Unavailable');
+      }
       const wallet = new ethers.Wallet(privateKey, provider);
 
       const contract = new ethers.Contract(
@@ -265,7 +270,7 @@ export class CertificateService {
   }
 
   private async resolveCertificate(
-    data: { data: PolybaseCertificate; block: { hash: string } },
+    data: { data: PolybaseCertificate },
     options?: RequestOptions,
   ) {
     const { full = false } = options || {};
@@ -307,9 +312,12 @@ export class CertificateService {
       .record(certificateId)
       .get();
 
-    const { block, data } = certificateRecord;
+    const { data } = certificateRecord;
 
-    return this.resolveCertificate({ block, data }, options);
+    if (!data) {
+      throw new Error('Certificate data unavailable');
+    }
+    return this.resolveCertificate({ data }, options);
   }
 
   public async getCertificates({}, options?: RequestOptions) {
@@ -332,10 +340,11 @@ export class CertificateService {
       .where('slug', '==', slug)
       .get()
       .then((result) => {
-        if (result.data.length === 0) {
+        const res = first(result.data);
+        if (!res) {
           throw new NotFoundException('Certificate not found');
         }
-        return first(result.data);
+        return res;
       });
 
     if (!certificateRecord) {
@@ -380,7 +389,13 @@ export class CertificateService {
     options?: RequestOptions,
   ) {
     const { userId } = props;
-    const res = { collections: [], items: [] };
+    const res: {
+      collections: PolybaseCertificate[];
+      items: PolybaseCertificate[];
+    } = {
+      collections: [],
+      items: [],
+    };
 
     // collections
     const collectionRefs = await this.collectionService.getCollectionsForUser(
@@ -398,12 +413,15 @@ export class CertificateService {
             .get();
 
         if (certificatesForCollection.length !== 0) {
-          await Promise.all(
-            map(certificatesForCollection, async (certificate) => {
-              res.collections.push(
-                await this.resolveCertificate(certificate.toJSON(), options),
-              );
-            }),
+          res.collections = concat(
+            res.collections,
+            await Promise.all(
+              map(
+                certificatesForCollection,
+                async (certificate) =>
+                  await this.resolveCertificate(certificate.toJSON(), options),
+              ),
+            ),
           );
         }
       }
@@ -429,12 +447,15 @@ export class CertificateService {
           .get();
 
         if (certificatesForItem.length !== 0) {
-          await Promise.all(
-            map(certificatesForItem, async (certificate) => {
-              res.items.push(
-                await this.resolveCertificate(certificate.toJSON(), options),
-              );
-            }),
+          res.items = concat(
+            res.items,
+            await Promise.all(
+              map(
+                certificatesForItem,
+                async (certificate) =>
+                  await this.resolveCertificate(certificate.toJSON(), options),
+              ),
+            ),
           );
         }
       }

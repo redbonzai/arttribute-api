@@ -105,7 +105,7 @@ export class CreateCollection {
    * @example true
    */
   @IsNotEmpty()
-  @IsBooleanString()
+  @IsBoolean()
   needsRequest: boolean;
 }
 
