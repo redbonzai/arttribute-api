@@ -6,25 +6,48 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { APIKeyAuthGuard, JwtAuthGuard, User, UserPayload } from '../auth';
+import { Authentication, User, UserPayload } from '../auth';
 import { Project } from '../auth/decorators/project.decorator';
-import { CreateCollection } from './collection.dto';
+import { CollectionResponse, CreateCollection } from './collection.dto';
 import { CollectionService } from './collection.service';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { UserService } from '../user/user.service';
 
+@ApiTags('collections')
+@ApiBearerAuth()
 @Controller({ version: '1', path: 'collections' })
 export class CollectionController {
-  constructor(private readonly collectionService: CollectionService) {}
+  constructor(
+    private readonly collectionService: CollectionService,
+    private readonly userService: UserService,
+  ) {}
 
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(APIKeyAuthGuard)
+  @ApiOperation({ summary: 'Create a new collection' })
+  @ApiHeader({
+    name: 'x-api-key',
+    description: 'API key',
+    required: true,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created a new collection',
+    type: CollectionResponse,
+  })
+  @Authentication('any')
   @Post()
   async createCollection(
     @Body() createCollectionDto: CreateCollection,
-    @User() user: UserPayload,
-    @Project() project: any,
+    @User() user?: UserPayload,
+    @Project() project?: any,
   ) {
+    user ||= await this.userService.populateUser(project);
     return await this.collectionService.createCollection(
       createCollectionDto,
       user,
@@ -32,21 +55,50 @@ export class CollectionController {
     );
   }
 
+  @ApiOperation({ summary: 'Get all collections' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all collections',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'No Collection found' })
   @Get()
   async getAllCollections() {
     return await this.collectionService.getAllCollections();
   }
 
+  @ApiOperation({ summary: 'Get all collections for a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved all collections for a user',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'No collection found for user' })
   @Get('user/:id') // TODO: change when user feature and auth is implemented [expected: /users/{userId}/collections)]
   async getCollectionsForUser(@Param('id') userId: string) {
     return await this.collectionService.getCollectionsForUser(userId);
   }
 
+  @ApiOperation({ summary: 'Get a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved a collection',
+    type: CollectionResponse,
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
   @Get(':id')
   async getCollection(@Param('id') collectionId: string) {
     return await this.collectionService.getCollection(collectionId);
   }
 
+  @ApiOperation({ summary: 'Change the visibility of a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully changed the visibility of a collection',
+    type: CollectionResponse,
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
   @Patch(':id')
   async changeVisibility(
     @Param('id') collectionId: string,
@@ -61,13 +113,23 @@ export class CollectionController {
   }
 
   // TODO: check on the API structure for adding and removing items from a collection
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Add an item to a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully added an item collection',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
+  @Authentication('any')
   @Patch(':id/items')
   async addItemToCollection(
     @Param('id') collectionId: string,
     @Body('itemId') itemId: string,
-    @User() user: UserPayload,
+    @User() user?: UserPayload,
+    @Project() project?: any,
   ) {
+    user ||= await this.userService.populateUser(project);
     return await this.collectionService.addItemToCollection(
       collectionId,
       itemId,
@@ -75,13 +137,23 @@ export class CollectionController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Remove an item from a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully removed an item from the collection',
+    type: [CollectionResponse],
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
+  @Authentication('any')
   @Delete(':id/items/:itemId')
   async removeItemFromCollection(
     @Param('id') collectionId: string,
     @Param('itemId') itemId: string,
-    @User() user: UserPayload,
+    @User() user?: UserPayload,
+    @Project() project?: any,
   ) {
+    user ||= await this.userService.populateUser(project);
     return await this.collectionService.removeItemFromCollection(
       collectionId,
       itemId,
@@ -89,6 +161,13 @@ export class CollectionController {
     );
   }
 
+  @ApiOperation({ summary: 'Delete a collection' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully deleted a collection',
+  })
+  @ApiResponse({ status: 404, description: 'Collection not found' })
+  @ApiResponse({ status: 401, description: 'Forbidden' })
   @Delete(':id')
   async deleteCollection(
     @Param('id') collectionId: string,

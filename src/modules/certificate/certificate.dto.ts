@@ -7,10 +7,16 @@ import {
 } from 'class-validator';
 
 class Reference {
+  /**
+   * @example "item"
+   */
   @IsDefined()
   @IsIn(['item', 'collection'])
   type!: 'item' | 'collection';
 
+  /**
+   * @example "123e4567-e89b-12d3-a456-426614174000"
+   */
   @IsDefined()
   @IsUUID()
   id!: string;
@@ -22,6 +28,9 @@ export class PolybaseCertificate {
   id: string;
 
   @IsString()
+  title?: string;
+
+  @IsString()
   owner?: string;
 
   @IsString()
@@ -30,12 +39,22 @@ export class PolybaseCertificate {
   @IsDefined()
   @ValidateNested()
   reference!: Reference;
+
+  minted?: boolean;
+  image?: string;
 }
 
 class Certificate {
+  /**
+   * Description of the certificate
+   * @example "New Certificate"
+   */
   @IsString()
   description?: string;
 
+  /**
+   * Reference to the item or collection
+   */
   @IsDefined()
   reference: Reference;
 }

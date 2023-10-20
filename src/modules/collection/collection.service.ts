@@ -4,7 +4,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Collection, Polybase } from '@polybase/client';
+import { CallArgs, Collection, Polybase } from '@polybase/client';
+import { compact, concat, differenceBy, isEmpty } from 'lodash';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
 import { UserPayload } from '../auth';
@@ -14,14 +15,10 @@ import { CollectionResponse, CreateCollection, Item } from './collection.dto';
 @Injectable()
 export class CollectionService {
   db: Polybase;
-  eddieDb: Polybase;
-  bashyDb: Polybase;
   collection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy'); //changed from Khalifa to bashy for testing
-    this.eddieDb = polybaseService.app('eddie');
-    this.bashyDb = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable'); //changed from Khalifa to bashy for testing
     this.collection = this.db.collection('Collection');
   }
 
@@ -31,18 +28,20 @@ export class CollectionService {
     project: any,
   ) {
     const id = generateUniqueId();
-
+    const defaultImage =
+      'https://bafybeiadgrpvvdbejsrhebyathrdtdacr4qtuioot7gkaxnkpjtjc3y3ye.ipfs.w3s.link/CollectionDefault.png';
     const collection = await this.collection.create([
       id,
       createCollectionDto.title,
+      createCollectionDto.featureImage || defaultImage,
       createCollectionDto.description,
       createCollectionDto.isPublic,
       createCollectionDto.tags,
-      this.bashyDb.collection('User').record(user.sub),
-      this.bashyDb.collection('Project').record(project.id),
+      this.db.collection('User').record(user.sub),
+      this.db.collection('Project').record(project.id),
       createCollectionDto.license.join(''),
       createCollectionDto.license.map((license_id) =>
-        this.eddieDb.collection('License').record(license_id),
+        this.db.collection('License').record(license_id),
       ),
       createCollectionDto.price?.amount || 0,
       createCollectionDto.price?.currency || 'none',
@@ -115,7 +114,7 @@ export class CollectionService {
     }
 
     // TODO: integrate with actual Item module
-    const record = await this.bashyDb.collection('Item').record(itemId).get();
+    const record = await this.db.collection('Item').record(itemId).get();
     const item = record.data;
 
     if (!record || !item) throw new NotFoundException('Item not found');
@@ -123,20 +122,22 @@ export class CollectionService {
     if (collection.items.find((i) => i.id == item.id))
       throw new ConflictException('Item already in collection');
 
-    const newLicenses = [];
+    const newLicenses = differenceBy(
+      item.license.reference,
+      collection.license.reference,
+      'id',
+    );
 
-    for (const license of item.license.reference) {
-      if (!collection.license.reference.find((l) => l.id == license.id)) {
-        newLicenses.push(license);
-      }
-    }
+    const args: CallArgs = compact(
+      concat(
+        [record],
+        [isEmpty(newLicenses) ? undefined : (newLicenses as any)], // TODO: Temporary fix
+      ),
+    );
 
     const { data: collections } = await this.collection
       .record(collectionId)
-      .call('addItemToCollection', [
-        record,
-        newLicenses.length === 0 ? undefined : newLicenses,
-      ]);
+      .call('addItemToCollection', args);
 
     return collections;
   }
@@ -188,3 +189,4 @@ export class CollectionService {
     await this.collection.record(collectionId).call('del');
   }
 }
+

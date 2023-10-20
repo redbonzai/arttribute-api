@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -6,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Collection, Polybase } from '@polybase/client';
 import { ethers } from 'ethers';
-import { first, map } from 'lodash';
+import { concat, first, map } from 'lodash';
 import { arttributeCertificateAbi } from '~/shared/abi/ArttributeCertificate';
 import { PolybaseService } from '~/shared/polybase';
 import { generateUniqueId } from '~/shared/util/generateUniqueId';
@@ -15,6 +16,7 @@ import { UserPayload } from '../auth';
 import { CollectionService } from '../collection/collection.service';
 import { ItemService } from '../item/item.service';
 import { CreateCertificate, PolybaseCertificate } from './certificate.dto';
+import { File, Web3Storage } from 'web3.storage';
 
 interface RequestOptions {
   full?: boolean;
@@ -22,7 +24,6 @@ interface RequestOptions {
 @Injectable()
 export class CertificateService {
   private db: Polybase;
-  private eddieDb: Polybase;
   private certificateCollection: Collection<PolybaseCertificate>;
   itemCollection: Collection<any>;
   collectionCollection: Collection<any>;
@@ -34,8 +35,7 @@ export class CertificateService {
     private collectionService: CollectionService,
     private itemService: ItemService,
   ) {
-    this.db = polybaseService.app('bashy');
-    this.eddieDb = polybaseService.app('eddie');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.certificateCollection = this.db.collection('Certificate');
     this.itemCollection = this.db.collection('Item');
     this.collectionCollection = this.db.collection('Collection');
@@ -53,6 +53,7 @@ export class CertificateService {
     title: string;
     type: string;
     license: string;
+    imageUrl: string;
     needsRequest: string;
     price: { amount: number; currency: string };
   }> {
@@ -66,11 +67,12 @@ export class CertificateService {
           title: item.title,
           type: 'item',
           license: item.license.name,
+          imageUrl: item.url,
           needsRequest: item.needsRequest,
           price: item.price,
         };
       } else {
-        throw new NotFoundException('reference record not found');
+        throw new NotFoundException('Reference item does not exist');
       }
     } else if (type === 'collection') {
       const { data: collection } = await this.collectionCollection
@@ -88,11 +90,12 @@ export class CertificateService {
           title: collection.title,
           type: 'collection',
           license: collection.license.name,
+          imageUrl: collection.featureImage,
           needsRequest: collection.needsRequest,
           price: collection.price,
         };
       } else {
-        throw new NotFoundException('reference record not found');
+        throw new NotFoundException('Reference collection does not exist');
       }
     } else {
       throw new NotFoundException(`reference ${type} does not exist`);
@@ -110,12 +113,22 @@ export class CertificateService {
       .where('reference.type', '==', referenceType)
       .where('sender', '==', this.db.collection('User').record(user.sub))
       .get()
-      .then(({ data }) => first(data));
+      .then((result) => {
+        const res = first(result.data);
+        if (!res) {
+          throw new NotFoundException(
+            'Permission request not found: This item/collection requires permission request',
+          );
+        }
+        return res;
+      });
 
     if (permissionRequest) {
       return permissionRequest;
     } else {
-      throw new NotFoundException('Permission request not found');
+      throw new NotFoundException(
+        'Permission request not found: This item/collection requires permission request',
+      );
     }
   }
 
@@ -129,11 +142,16 @@ export class CertificateService {
       .where('reference.id', '==', referenceId)
       .where('reference.type', '==', referenceType)
       .where('sender', '==', this.db.collection('User').record(user.sub))
-      .get();
-
-    if (payment.length === 0) {
-      throw new NotFoundException('Payment not found');
-    }
+      .get()
+      .then((result) => {
+        const res = first(result.data);
+        if (!res) {
+          throw new NotFoundException(
+            'Payment not found: This item/collection requires payment',
+          );
+        }
+        return res;
+      });
   }
 
   public async createCertificate(props: {
@@ -162,7 +180,7 @@ export class CertificateService {
         user,
       );
       if (!permissionRequest.accepted) {
-        throw new UnauthorizedException('Permission request not accepted');
+        throw new BadRequestException('Permission request not accepted');
       }
     }
 
@@ -176,6 +194,8 @@ export class CertificateService {
     }
 
     const certificateId = generateUniqueId();
+    const certificateName = `${certificateReference.title} by ${certificateReference.author} ${certificateReference.license}`;
+    const imageUrl = certificateReference.imageUrl;
     const slug =
       certificateReference.title.toLowerCase() +
       '-by' +
@@ -183,9 +203,11 @@ export class CertificateService {
       '-' +
       certificateReference.license +
       '-' +
-      certificateId;
+      user.wallet_address.toLowerCase();
     return await this.certificateCollection.create([
       certificateId,
+      certificateName,
+      imageUrl,
       this.db.collection('User').record(user.sub),
       certificate.reference.type, // Reference Type (Item, Collection)
       certificate.reference.id,
@@ -209,9 +231,14 @@ export class CertificateService {
       const { data: certificate } = await this.certificateCollection
         .record(certificateId)
         .get();
+
+      //If ceertificate is already minted
+      if (certificate?.minted) {
+        throw new UnauthorizedException('Certificate already minted');
+      }
+
       const contractAddress = '0x6A803B8F038554AF34AC73F1C099bd340dcC7026'; //old '0x981a7614afb87Cd0F56328f72660f3FbFa2EF30e';
-      const tokenURI =
-        'https://bafybeiekhfonwnc7uqot6t3wdu45ncip2bwfor35zizapzre6dijgrklkm.ipfs.w3s.link/cf555ba7-5a62-48ae-91a8-be3cc7a1b60e.jpg';
+
       const { recoveredAddress, publicKey } = getSignerData(message, signature);
       // if (publicKey !== user.sub) {
       //   throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
@@ -219,9 +246,23 @@ export class CertificateService {
       const provider = new ethers.JsonRpcProvider(
         `https://celo-alfajores.infura.io/v3/${process.env.PROJECT_ID}`,
       );
+      const certificateTitle = certificate?.title;
+      const privateKey = process.env.MINT_KEY;
+      if (!privateKey) {
+        throw new Error('Mint Key Unavailable');
+      }
 
-      const privateKey =
-        '0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0';
+      const client = new Web3Storage({
+        token: process.env.WEB3STORAGE_TOKEN || 'unavailable',
+      });
+      //upload metadata jsonto ipfs
+      const metadata = JSON.stringify({
+        ...certificate,
+      });
+      const datablob = new Blob([metadata], { type: 'application/json' });
+      const metadataFile = new File([datablob], 'metadata.json');
+      const cid = await client.put([metadataFile]);
+      const tokenURI = `https://${cid}.ipfs.w3s.link/metadata.json`;
       const wallet = new ethers.Wallet(privateKey, provider);
 
       const contract = new ethers.Contract(
@@ -230,26 +271,39 @@ export class CertificateService {
         wallet,
       );
 
-      const mintCertificateAction = await contract.mintCertificate(
+      function getMintedTokenId() {
+        return new Promise((resolve, reject) => {
+          contract.once('CertificateMinted', (tokenId) => {
+            resolve(tokenId.toString());
+          });
+        });
+      }
+      await contract.mintCertificate(
         recoveredAddress,
         1,
         certificateId,
         tokenURI,
       );
+      const mintedTokenId = await getMintedTokenId();
 
-      const mintedCertificate = await mintCertificateAction.wait();
-      const tokenId = mintCertificateAction;
+      const tokenDetails = `{mintedTokenId:${mintedTokenId}, tokenName:${certificateTitle},tokenAddress:${contractAddress} }`;
       const updatedCert = await this.certificateCollection
         .record(certificateId)
-        .call('updateMintedStatus', [true, tokenId]);
-      return { updatedCert, mintedCertificate, recoveredAddress };
+        .call('updateMintedStatus', [true, tokenDetails]);
+      return {
+        tokenURI,
+        updatedCert,
+        mintedTokenId: mintedTokenId,
+        contractAddress: contractAddress,
+        receivingAddress: recoveredAddress,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
   }
 
   private async resolveCertificate(
-    data: { data: PolybaseCertificate; block: { hash: string } },
+    data: { data: PolybaseCertificate },
     options?: RequestOptions,
   ) {
     const { full = false } = options || {};
@@ -291,9 +345,12 @@ export class CertificateService {
       .record(certificateId)
       .get();
 
-    const { block, data } = certificateRecord;
+    const { data } = certificateRecord;
 
-    return this.resolveCertificate({ block, data }, options);
+    if (!data) {
+      throw new Error('Certificate data unavailable');
+    }
+    return this.resolveCertificate({ data }, options);
   }
 
   public async getCertificates({}, options?: RequestOptions) {
@@ -315,7 +372,13 @@ export class CertificateService {
     const { data: certificateRecord } = await this.certificateCollection
       .where('slug', '==', slug)
       .get()
-      .then(({ data }) => first(data));
+      .then((result) => {
+        const res = first(result.data);
+        if (!res) {
+          throw new NotFoundException('Certificate not found');
+        }
+        return res;
+      });
 
     if (!certificateRecord) {
       throw new NotFoundException('Certificate not found');
@@ -359,12 +422,17 @@ export class CertificateService {
     options?: RequestOptions,
   ) {
     const { userId } = props;
-    const res = { collections: [], items: [] };
+    const res: {
+      collections: PolybaseCertificate[];
+      items: PolybaseCertificate[];
+    } = {
+      collections: [],
+      items: [],
+    };
 
     // collections
-    const collectionRefs = await this.collectionService.getCollectionsForUser(
-      userId,
-    );
+    const collectionRefs =
+      await this.collectionService.getCollectionsForUser(userId);
 
     if (collectionRefs.length !== 0) {
       const collectionIds = map(collectionRefs, 'id');
@@ -377,21 +445,24 @@ export class CertificateService {
             .get();
 
         if (certificatesForCollection.length !== 0) {
-          await Promise.all(
-            map(certificatesForCollection, async (certificate) => {
-              res.collections.push(
-                await this.resolveCertificate(certificate.toJSON(), options),
-              );
-            }),
+          res.collections = concat(
+            res.collections,
+            await Promise.all(
+              map(
+                certificatesForCollection,
+                async (certificate) =>
+                  await this.resolveCertificate(certificate.toJSON(), options),
+              ),
+            ),
           );
         }
       }
     }
 
     // items
-    const { data: itemRefs } = await this.eddieDb
+    const { data: itemRefs } = await this.db
       .collection('Item')
-      .where('owner', '==', this.eddieDb.collection('User').record(userId))
+      .where('owner', '==', this.db.collection('User').record(userId))
       .get();
     //   .then(({ data }) => ({ data }));
 
@@ -408,12 +479,15 @@ export class CertificateService {
           .get();
 
         if (certificatesForItem.length !== 0) {
-          await Promise.all(
-            map(certificatesForItem, async (certificate) => {
-              res.items.push(
-                await this.resolveCertificate(certificate.toJSON(), options),
-              );
-            }),
+          res.items = concat(
+            res.items,
+            await Promise.all(
+              map(
+                certificatesForItem,
+                async (certificate) =>
+                  await this.resolveCertificate(certificate.toJSON(), options),
+              ),
+            ),
           );
         }
       }
@@ -428,3 +502,4 @@ export class CertificateService {
     return this.certificateCollection.record(id).call('del');
   }
 }
+

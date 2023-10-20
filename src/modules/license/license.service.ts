@@ -13,7 +13,7 @@ export class LicenseService {
   private readonly licenseCollection: Collection<any>;
 
   constructor(private polybaseService: PolybaseService) {
-    this.db = polybaseService.app('bashy');
+    this.db = polybaseService.app(process.env.POLYBASE_APP || 'unavailable');
     this.licenseCollection = this.db.collection('License');
   }
 
@@ -39,12 +39,13 @@ export class LicenseService {
       createLicense.name,
       createLicense.description,
       createLicense.symbol,
+      createLicense.family,
     ]);
     return createdLicense;
   }
 
   update() {
-    return `This action updates an license`;
+    return `This action updates a license`;
   }
 
   public async remove(id: string) {
