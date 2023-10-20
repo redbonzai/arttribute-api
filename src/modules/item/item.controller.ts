@@ -64,7 +64,7 @@ export class ItemController {
     @User() user?: UserPayload,
     @Project() project?: any,
   ) {
-    user = await this.userService.populateUser(user, project);
+    user ||= await this.userService.populateUser(project);
     return this.itemService.findOne(id);
   }
 
@@ -114,10 +114,10 @@ export class ItemController {
   })
   async create(
     @Body() createItem: CreateItemDto, //TODO: Should currency input be limited in array?
-    @User() user: UserPayload,
-    @Project() project: any,
+    @User() user?: UserPayload,
+    @Project() project?: any,
   ) {
-    user = user || (await this.userService.populateUser(user, project));
+    user ||= await this.userService.populateUser(project);
     return this.itemService.create(createItem, user, project);
   }
 
@@ -134,10 +134,10 @@ export class ItemController {
   async update(
     @Param('id') id: string,
     @Body() updateItem: UpdateItemDto,
-    @User() user: UserPayload,
-    @Project() project: any,
+    @User() user?: UserPayload,
+    @Project() project?: any,
   ) {
-    user = user || (await this.userService.populateUser(user, project));
+    user ||= await this.userService.populateUser(project);
     return this.itemService.update(id, updateItem, user, project);
   }
 
@@ -149,7 +149,12 @@ export class ItemController {
   @ApiResponse({ status: 404, description: 'Item not found' })
   @ApiResponse({ status: 401, description: 'Forbidden' })
   @Delete(':id')
-  remove(@Param('id') id: string, @User() user: UserPayload) {
+  async remove(
+    @Param('id') id: string,
+    @User() user?: UserPayload,
+    @Project() project?: any,
+  ) {
+    user ||= await this.userService.populateUser(project);
     return this.itemService.remove(id, user);
   }
 }
